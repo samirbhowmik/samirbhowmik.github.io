@@ -1,0 +1,30 @@
+---
+interface Props { url?: string; title?: string; }
+const { url, title = 'Video' } = Astro.props;
+
+function toEmbed(u?: string): string | null {
+  if (!u) return null;
+  try {
+    const url = new URL(u);
+    const host = url.hostname.replace(/^www\./, '');
+    if (host === 'youtu.be') return `https://www.youtube-nocookie.com/embed/${url.pathname.slice(1)}`;
+    if (host.endsWith('youtube.com')) {
+      const id = url.searchParams.get('v');
+      if (id) return `https://www.youtube-nocookie.com/embed/${id}`;
+    }
+    if (host.endsWith('vimeo.com')) {
+      const id = url.pathname.split('/').filter(Boolean)[0];
+      if (id) return `https://player.vimeo.com/video/${id}`;
+    }
+  } catch { /* fall through */ }
+  return null;
+}
+const embed = toEmbed(url);
+---
+{embed && (
+  <div class="embed">
+    <iframe src={embed} title={title} loading="lazy"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen></iframe>
+  </div>
+)}

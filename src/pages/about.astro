@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+import site from '../data/site.json';
+---
+<Base title="About">
+  <section class="wrap" style="max-width:680px">
+    <h2 class="section">About</h2>
+    <p class="bio">{site.bio}</p>
+    {site.credentials && <p class="creds mono">{site.credentials}</p>}
+
+    <h3 class="section">Contact & links</h3>
+    <ul class="links mono">
+      <li><a href={`mailto:${site.links.email}`}>Email — for curators & press</a></li>
+      {site.social?.linkedin && <li><a href={site.social.linkedin}>LinkedIn</a></li>}
+      {site.social?.instagram && <li><a href={site.social.instagram}>Instagram</a></li>}
+      {site.social?.scholar && <li><a href={site.social.scholar}>Google Scholar</a></li>}
+      {site.social?.orcid && <li><a href={site.social.orcid}>ORCID</a></li>}
+      {site.links.youtube && <li><a href={site.links.youtube}>YouTube — moving image works</a></li>}
+      {site.links.vimeo && <li><a href={site.links.vimeo}>Vimeo — films & documentation</a></li>}
+      {site.links.project && <li><a href={site.links.project}>Terra-Performing Project</a></li>}
+    </ul>
+
+    <p class="muted mono" style="margin-top:2rem">
+      Hosted on GitHub Pages. Built with Astro. No trackers.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .bio { font-size: 1.1rem; line-height: 1.6; }
+  .creds { font-size: .85rem; letter-spacing: .04em; color: var(--muted); margin-top: .5rem; }
+  .links { list-style: none; padding: 0; }
+  .links li { padding: .5rem 0; border-bottom: 1px solid var(--line); }
+</style>

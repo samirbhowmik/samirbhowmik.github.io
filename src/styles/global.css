@@ -1,0 +1,119 @@
+/* ============================================================
+   STYLE CONTROLS — edit these to restyle the whole site at once.
+   Change a value here and it updates everywhere it's used.
+
+   COLORS: paste any hex code (e.g. from a color picker) after the colon.
+   FONTS:  --font-sans is the main typeface. To use a custom/Google font,
+           add its @import or <link> and put its name first in the list.
+   SIZE:   overall text scale is set by `font-size` in the `body` rule below.
+   The big homepage name is sized in src/pages/index.astro (.s0 h2).
+   ============================================================ */
+:root {
+  /* Stratigraphic palette — surface (light) to deep (dark).
+     Used by both the normal pages and the landing strata. */
+  --surface: #e9e4da;   /* light top of the homepage */
+  --layer-1: #c9c2b4;
+  --layer-2: #8f8676;
+  --layer-3: #4f4a40;
+  --layer-4: #2a2722;
+  --deep:    #141210;
+
+  --bg: #0f0e0c;        /* dark page background (interior pages) */
+  --fg: #ece8e0;        /* main text color on dark pages */
+  --muted: #9a948a;     /* secondary / dimmed text */
+  --line: #2c2a26;      /* hairline dividers */
+  --accent: #d8a657;    /* highlight: hovers, book tag, active links (warm ochre) */
+
+  --maxw: 1100px;       /* max content width */
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); transition: border-color .2s, color .2s; }
+a:hover { border-color: var(--accent); color: var(--accent); }
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.5rem; }
+
+/* Minimal interior-page corner: name + Menu button, no full bar. */
+.corner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.1rem 1.5rem; pointer-events: none;
+}
+.corner-name, .menu-btn { pointer-events: auto; }
+.corner-name { font-size: .95rem; font-weight: 600; letter-spacing: .02em; border: none; }
+.menu-btn {
+  font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+  background: none; border: 1px solid var(--line); color: var(--fg);
+  padding: .35rem .8rem; border-radius: 999px; cursor: pointer; transition: border-color .2s, color .2s;
+}
+.menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Full-screen overlay menu */
+.menu-overlay {
+  position: fixed; inset: 0; z-index: 80;
+  background: color-mix(in srgb, var(--bg) 96%, transparent);
+  backdrop-filter: blur(10px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2rem;
+}
+.menu-overlay[hidden] { display: none; }
+.menu-close {
+  position: absolute; top: 1.1rem; right: 1.5rem;
+  background: none; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer;
+}
+.menu-close:hover { color: var(--fg); }
+.menu-nav { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.menu-nav a {
+  font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 600; letter-spacing: -.01em;
+  border: none; color: var(--fg); transition: color .2s;
+}
+.menu-nav a:hover, .menu-nav a[aria-current="page"] { color: var(--accent); }
+.menu-foot { color: var(--muted); font-size: .85rem; }
+.menu-foot a { border: none; color: var(--muted); }
+.menu-foot a:hover { color: var(--fg); }
+
+/* Interior pages: clear the fixed corner. Homepage strata are full-bleed
+   and start at the very top, so they opt out via .home-main. */
+main { padding-top: 4.5rem; }
+main.home-main { padding-top: 0; }
+
+.site-footer {
+  margin-top: 5rem; padding: 2.5rem 0; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: .85rem;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+}
+
+h2.section { font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; margin: 3rem 0 1rem; }
+
+.mono { font-family: var(--font-mono); font-size: .85em; }
+.muted { color: var(--muted); }
+.tag {
+  font-family: var(--font-mono); font-size: .72rem; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: .12rem .55rem;
+  cursor: pointer; user-select: none; background: none;
+}
+.tag:hover { border-color: var(--accent); color: var(--accent); }
+.tag[data-active="true"] { background: var(--accent); color: #1a1712; border-color: var(--accent); }
+
+.embed { position: relative; aspect-ratio: 16/9; margin: 1.5rem 0; background: #000; }
+.embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .site-header { flex-direction: column; gap: .5rem; }
+}

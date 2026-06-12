@@ -1,0 +1,115 @@
+---
+import Base from '../../layouts/Base.astro';
+import VideoEmbed from '../../components/VideoEmbed.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  const pubs = await getCollection('publications');
+  return projects.map(p => ({
+    params: { id: p.id },
+    props: { project: p, pubs, allProjects: projects },
+  }));
+}
+
+const { project, pubs, allProjects } = Astro.props;
+const { Content } = await render(project);
+const d = project.data;
+
+const relatedPubs = pubs.filter(pub =>
+  pub.data.relatedProjects.includes(project.id) || d.publication === pub.id
+);
+
+// Related works: other projects sharing at least one theme or collaborator,
+// ranked by how many they share. This is the "network" — expressed as links.
+const related = allProjects
+  .filter(p => p.id !== project.id)
+  .map(p => {
+    const sharedThemes = p.data.themes.filter(t => d.themes.includes(t));
+    const sharedPeople = p.data.collaborators.filter(c => d.collaborators.includes(c));
+    return { p, score: sharedThemes.length + sharedPeople.length, sharedThemes, sharedPeople };
+  })
+  .filter(x => x.score > 0)
+  .sort((a, b) => b.score - a.score || b.p.data.year - a.p.data.year)
+  .slice(0, 4);
+---
+<Base title={d.title} description={d.summary} image={d.cover}>
+  <article class="wrap project">
+    <p class="mono muted"><a href="/works">← Works</a></p>
+    <h1>{d.title} <span class="muted">({d.year})</span></h1>
+    <p class="lede">{d.summary}</p>
+
+    <p class="meta mono muted">
+      {d.type.join(' · ')}
+      {d.venue && <> · {d.venue}</>}
+      {d.collaborators.length > 0 && <> · with {d.collaborators.join(', ')}</>}
+    </p>
+
+    {d.video && <VideoEmbed url={d.video} title={d.title} />}
+    {!d.video && d.cover && <img src={d.cover} alt={d.title} class="cover" />}
+
+    <div class="body"><Content /></div>
+
+    {(d.liveUrl || d.repoUrl) && (
+      <p class="project-links">
+        {d.liveUrl && <a class="plink" href={d.liveUrl}>↗ Live project</a>}
+        {d.repoUrl && <a class="plink" href={d.repoUrl}>↗ Source code</a>}
+      </p>
+    )}
+
+    <p class="themes">
+      {d.themes.map(t => (
+        <a class="tag" href={`/works?theme=${encodeURIComponent(t)}`}>{t}</a>
+      ))}
+    </p>
+
+    {relatedPubs.length > 0 && (
+      <section>
+        <h2 class="section">Related writing</h2>
+        <ul class="rel">
+          {relatedPubs.map(pub => (
+            <li><a href={`/publications#${pub.id}`}>{pub.data.title}</a>
+              <span class="mono muted"> — {pub.data.kind}{pub.data.forthcoming ? ', forthcoming' : `, ${pub.data.year}`}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {related.length > 0 && (
+      <section>
+        <h2 class="section">Related works</h2>
+        <ul class="rel">
+          {related.map(({ p, sharedThemes, sharedPeople }) => (
+            <li>
+              <a href={`/works/${p.id}`}>{p.data.title}</a>
+              <span class="mono muted"> ({p.data.year})</span>
+              <div class="shared mono muted">
+                shares {[...sharedThemes, ...sharedPeople].join(', ')}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </article>
+</Base>
+
+<style>
+  .project { max-width: 760px; }
+  h1 { font-size: 2rem; margin: .5rem 0 .25rem; line-height: 1.1; }
+  .lede { font-size: 1.15rem; color: var(--fg); }
+  .meta { font-size: .8rem; margin-top: -.3rem; }
+  .cover { width: 100%; height: auto; margin: 1.5rem 0; }
+  .body { margin: 1.5rem 0; }
+  .themes { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 2rem; }
+  .project-links { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.5rem 0 0; }
+  .plink {
+    border: 1px solid var(--line); border-radius: 6px; padding: .5rem .9rem;
+    font-size: .9rem; font-weight: 600; transition: border-color .2s, color .2s;
+  }
+  .plink:hover { border-color: var(--accent); color: var(--accent); }
+  .rel { list-style: none; padding: 0; }
+  .rel li { padding: .5rem 0; border-bottom: 1px solid var(--line); }
+  .shared { font-size: .72rem; margin-top: .15rem; }
+</style>

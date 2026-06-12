@@ -1,0 +1,4 @@
+---
+outlet: Artnet
+marquee: true
+---

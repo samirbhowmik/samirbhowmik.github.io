@@ -1,0 +1,94 @@
+---
+import '../styles/global.css';
+import '@fontsource/space-grotesk/400.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/600.css';
+import '@fontsource/space-grotesk/700.css';
+import site from '../data/site.json';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+const { title, description = site.bio, image = '/img/og-default.png' } = Astro.props;
+const pageTitle = title ? `${title} — ${site.name}` : site.name;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '';
+
+const navLinks = [
+  { href: '/works', label: 'Works' },
+  { href: '/publications', label: 'Writing' },
+  { href: '/teaching', label: 'Teaching' },
+  { href: '/press', label: 'Press' },
+  { href: '/service', label: 'Service' },
+  { href: '/about', label: 'About' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(image, Astro.site).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0f0e0c" />
+  </head>
+  <body>
+    {!isHome && (
+      <div class="corner">
+        <a class="corner-name" href="/">{site.name}</a>
+        <button class="menu-btn mono" aria-label="Open menu" aria-expanded="false" data-menu-open>Menu</button>
+      </div>
+    )}
+
+    <!-- Overlay menu: opened from the corner button (interior pages) or the
+         on-page "Menu" trigger on the homepage. Covers the full screen. -->
+    <div class="menu-overlay" data-menu hidden>
+      <button class="menu-close" aria-label="Close menu" data-menu-close>✕</button>
+      <nav class="menu-nav">
+        {navLinks.map(l => (
+          <a href={l.href} aria-current={Astro.url.pathname.startsWith(l.href) ? 'page' : undefined}>{l.label}</a>
+        ))}
+      </nav>
+      <div class="menu-foot mono">
+        {site.links.youtube && <a href={site.links.youtube}>YouTube</a>}
+        {' · '}
+        {site.links.vimeo && <a href={site.links.vimeo}>Vimeo</a>}
+        {' · '}
+        <a href={`mailto:${site.links.email}`}>Email</a>
+      </div>
+    </div>
+
+    <main class={isHome ? 'home-main' : undefined}>
+      <slot />
+    </main>
+    <footer class="site-footer wrap">
+      <span>© {new Date().getFullYear()} {site.name} · {site.location}</span>
+      <span class="mono">
+        {site.links.youtube && <a href={site.links.youtube}>YouTube</a>}
+        {' · '}
+        {site.links.vimeo && <a href={site.links.vimeo}>Vimeo</a>}
+        {' · '}
+        <a href={`mailto:${site.links.email}`}>Email</a>
+      </span>
+    </footer>
+
+    <script>
+      const overlay = document.querySelector('[data-menu]');
+      const open = () => { overlay.hidden = false; document.body.style.overflow = 'hidden'; document.querySelectorAll('[data-menu-open]').forEach(b => b.setAttribute('aria-expanded','true')); };
+      const close = () => { overlay.hidden = true; document.body.style.overflow = ''; document.querySelectorAll('[data-menu-open]').forEach(b => b.setAttribute('aria-expanded','false')); };
+      document.querySelectorAll('[data-menu-open]').forEach(b => b.addEventListener('click', open));
+      document.querySelectorAll('[data-menu-close]').forEach(b => b.addEventListener('click', close));
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) close(); });
+    </script>
+  </body>
+</html>

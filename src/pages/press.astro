@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const items = (await getCollection('press'))
+  .sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0) || a.data.order - b.data.order);
+---
+<Base title="Press" description="Press and media coverage of Samir Bhowmik's work.">
+  <section class="wrap" style="max-width:760px">
+    <h2 class="section">Press & Media</h2>
+    <ul class="press">
+      {items.map(p => (
+        <li class="item">
+          <span class="outlet">{p.data.outlet}</span>
+          {p.data.title && (
+            <span class="headline">
+              {p.data.url ? <a href={p.data.url}>{p.data.title}</a> : p.data.title}
+            </span>
+          )}
+          {p.data.year && <span class="year mono muted">{p.data.year}</span>}
+        </li>
+      ))}
+    </ul>
+    <p class="muted mono" style="margin-top:2rem; font-size:.8rem">
+      Add specific articles with headline, year, and link in src/content/press/.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .press { list-style: none; padding: 0; margin: 2rem 0 0; }
+  .item { padding: .8rem 0; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: baseline; }
+  .outlet { font-weight: 600; min-width: 12rem; }
+  .headline { flex: 1; }
+  .year { margin-left: auto; }
+</style>

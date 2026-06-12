@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const courses = (await getCollection('teaching'))
+  .sort((a, b) => a.data.order - b.data.order);
+---
+<Base title="Teaching" description="Courses, seminars, and supervision by Samir Bhowmik.">
+  <section class="wrap" style="max-width:760px">
+    <h2 class="section">Teaching</h2>
+    <p class="muted" style="max-width:60ch">
+      Research-led courses and seminars, several developed in collaboration with
+      biennials, museums, and partner institutions.
+    </p>
+    <ul class="courses">
+      {courses.map(c => (
+        <li class="course">
+          <h3>{c.data.title}</h3>
+          <p class="meta mono muted">
+            {c.data.institution}
+            {c.data.level && <> · {c.data.level}</>}
+            {c.data.credits && <> · {c.data.credits}</>}
+            {c.data.years && <> · {c.data.years}</>}
+            {c.data.role && <> · {c.data.role}</>}
+          </p>
+          {c.data.summary && <p class="sum muted">{c.data.summary}</p>}
+          {c.data.partners.length > 0 && (
+            <p class="partners mono muted">with {c.data.partners.join(', ')}</p>
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .courses { list-style: none; padding: 0; margin: 2rem 0 0; }
+  .course { padding: 1.2rem 0; border-bottom: 1px solid var(--line); }
+  .course h3 { font-size: 1.15rem; margin: 0 0 .25rem; }
+  .meta { font-size: .78rem; }
+  .sum { font-size: .92rem; margin: .4rem 0 0; }
+  .partners { font-size: .75rem; margin: .3rem 0 0; }
+</style>

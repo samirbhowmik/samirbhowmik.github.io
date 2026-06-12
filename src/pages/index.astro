@@ -1,0 +1,312 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import site from '../data/site.json';
+
+const projects = await getCollection('projects');
+const featured = projects
+  .filter(p => p.data.featured)
+  .sort((a, b) => b.data.year - a.data.year);
+
+// The single most recent work, pulled automatically — no upkeep needed.
+const latest = [...projects].sort(
+  (a, b) => b.data.year - a.data.year || b.data.order - a.data.order
+)[0];
+
+// Feature a book on the homepage: prefer a forthcoming book, else the most
+// recent book. Pulled automatically from the publications collection.
+const allPubs = await getCollection('publications');
+const books = allPubs
+  .filter(p => p.data.kind === 'book')
+  .sort((a, b) => (b.data.forthcoming - a.data.forthcoming) || b.data.year - a.data.year);
+const book = books[0];
+
+// The most recent peer-reviewed publication that isn't a book — articles,
+// chapters, essays. Pulled automatically; forthcoming items rank first.
+const latestPub = allPubs
+  .filter(p => p.data.kind !== 'book')
+  .sort((a, b) => (b.data.forthcoming - a.data.forthcoming) || b.data.year - a.data.year)[0];
+
+// Marquee press outlets for the "As featured in" strip.
+const featuredPress = (await getCollection('press'))
+  .filter(p => p.data.marquee)
+  .sort((a, b) => a.data.order - b.data.order);
+
+// The manually-edited "Now" announcement (current event/lecture), if present.
+const now = site.now;
+---
+<Base>
+  <!-- Stratigraphic intro: scroll descends from surface (who) to deep (why). -->
+  <section class="strata">
+    <div class="stratum s0">
+      <div class="wrap inner surface-grid">
+        <div class="surface-header">
+          <p class="depth mono">0 m · surface</p>
+          <h2>{site.name}</h2>
+          {site.credentials && <p class="creds mono">{site.credentials} · {site.location}</p>}
+
+          <nav class="home-nav">
+            <a href="/works">Works</a>
+            <a href="/publications">Writing</a>
+            <a href="/teaching">Teaching</a>
+            <a href="/press">Press</a>
+            <a href="/service">Service</a>
+            <a href="/about">About</a>
+          </nav>
+
+          <p class="homebio">{site.homeBio || site.bio}</p>
+
+          {site.social && (
+            <p class="socials mono">
+              {site.social.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
+              {site.social.instagram && <> · <a href={site.social.instagram}>Instagram</a></>}
+              {site.social.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
+              {site.social.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
+            </p>
+          )}
+        </div>
+
+        {book && (
+          <a class="book-feature" href={book.data.url || '/publications#' + book.id}>
+            {book.data.cover && <img src={book.data.cover} alt={book.data.title} />}
+            <span class="book-tag mono">{book.data.forthcoming ? 'Forthcoming book' : 'New book'}</span>
+            <span class="book-title">{book.data.title}</span>
+            {book.data.summary && <span class="book-sum muted">{book.data.summary}</span>}
+          </a>
+        )}
+
+        <div class="surface-cards">
+          <div class="current">
+            {now && now.text && (
+              <a class="now" href={now.url || '#'}>
+                <span class="now-label mono">{now.label || 'Now'}</span>
+                <span class="now-text">{now.text}</span>
+              </a>
+            )}
+            {latest && (
+              <a class="latest" href={`/works/${latest.id}`}>
+                <span class="now-label mono">Latest work</span>
+                <span class="now-text">{latest.data.title} <span class="muted">({latest.data.year})</span></span>
+              </a>
+            )}
+            {latestPub && (
+              <a class="pub-card" href={latestPub.data.url || '/publications#' + latestPub.id}>
+                <span class="now-label mono">New publication</span>
+                <span class="now-text">{latestPub.data.title}{latestPub.data.venue && <span class="muted"> · {latestPub.data.venue}</span>}</span>
+              </a>
+            )}
+          </div>
+
+          {featuredPress.length > 0 && (
+            <div class="featured-in">
+              <span class="fi-label mono">As featured in</span>
+              <span class="fi-outlets">
+                {featuredPress.map((p, i) => (
+                  <>
+                    {i > 0 && <span class="fi-dot">·</span>}
+                    {p.data.url ? <a href={p.data.url}>{p.data.outlet}</a> : <span>{p.data.outlet}</span>}
+                  </>
+                ))}
+              </span>
+            </div>
+          )}
+
+          <p class="scroll-hint mono">scroll to descend ↓</p>
+        </div>
+      </div>
+    </div>
+    <div class="stratum s1">
+      <div class="wrap inner">
+        <p class="depth mono">−1 · practice</p>
+        <p class="big">Performance, installation, and moving image that treat
+        infrastructure as something performed — and excavated.</p>
+      </div>
+    </div>
+    <div class="stratum s2">
+      <div class="wrap inner">
+        <p class="depth mono">−2 · research</p>
+        <p class="big">Academy of Finland Research Fellow at Uniarts Helsinki,
+        working on extractivism and ecology through the
+        <a href={site.links.project}>Terra-Performing</a> framework.</p>
+      </div>
+    </div>
+    <div class="stratum s3">
+      <div class="wrap inner">
+        <p class="depth mono">−3 · substrate</p>
+        <p class="big">A book, a body of works, and the threads between them —
+        explored below as a corpus you can filter by theme, form, and collaborator.</p>
+        <p class="enter mono">
+          <a href="/works">Enter the corpus →</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2 class="section">Featured works</h2>
+    <ul class="feat">
+      {featured.map(p => (
+        <li>
+          <a href={`/works/${p.id}`}>
+            <span class="fy mono">{p.data.year}</span>
+            <span class="ft">{p.data.title}</span>
+            <span class="fs muted">{p.data.summary}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="mono" style="margin-top:1.5rem"><a href="/works">All works →</a></p>
+  </section>
+</Base>
+
+<style>
+  /* Each stratum pins briefly (sticky) so the next slides up over it —
+     the "digging through layers" feel, pure CSS, no JS. */
+  .strata { }
+  .stratum {
+    position: sticky; top: 0; min-height: 100vh;
+    display: flex; align-items: center;
+  }
+  .inner { width: 100%; }
+  .depth { font-size: .72rem; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.2rem; }
+  .s0 { background: var(--surface); color: #1a1712; }
+  .s1 { background: var(--layer-2); color: #14110d; }
+  .s2 { background: var(--layer-3); color: var(--surface); }
+  .s3 { background: var(--deep); color: var(--fg); }
+  .s0 h2 { font-size: clamp(2.5rem, 8vw, 5rem); margin: 0; line-height: 1; letter-spacing: -.02em; }
+  .lede { font-size: 1.2rem; margin-top: .5rem; }
+  .creds { font-size: .82rem; letter-spacing: .04em; color: rgba(20,18,13,.6); margin: .3rem 0 0; }
+  .socials { font-size: .85rem; margin: 1.1rem 0 0; color: rgba(20,18,13,.55); }
+  .socials a { color: #1a1712; border-bottom: 1px solid transparent; }
+  .socials a:hover { border-color: var(--accent); }
+  .home-nav {
+    display: flex; flex-wrap: wrap; gap: .35rem 1.4rem; margin: 1.4rem 0 0;
+  }
+  .home-nav a {
+    font-size: 1.05rem; font-weight: 600; color: #1a1712; border: none;
+    border-bottom: 2px solid transparent; padding-bottom: 1px; transition: border-color .2s;
+  }
+  .home-nav a:hover { border-color: var(--accent); color: #1a1712; }
+  /* Mobile-first: single column, ordered header -> book -> cards. */
+  .surface-grid {
+    display: flex; flex-direction: column; gap: 2rem;
+  }
+  .surface-header { order: 1; }
+  .book-feature { order: 2; }
+  .surface-cards { order: 3; }
+  .homebio {
+    font-size: 1.02rem; line-height: 1.55; max-width: 46ch;
+    margin: 1.2rem 0 0; color: #2a2722;
+  }
+  .current { margin-top: 1.6rem; display: flex; flex-direction: column; gap: .6rem; max-width: 38rem; }
+  .now, .latest, .pub-card {
+    display: flex; align-items: baseline; gap: .85rem;
+    padding: .7rem .9rem; border: 1px solid rgba(20,18,13,.18);
+    border-radius: 6px; background: rgba(20,18,13,.03);
+    transition: border-color .2s, background .2s;
+  }
+  .now:hover, .latest:hover, .pub-card:hover { border-color: #1a1712; background: rgba(20,18,13,.07); color: #1a1712; }
+  .pub-card { border-left: 3px solid var(--accent); }
+  .now-label {
+    font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
+    padding: .15rem .5rem; border-radius: 999px; flex-shrink: 0;
+    background: #1a1712; color: var(--surface);
+  }
+  .now .now-label { background: var(--accent); color: #1a1712; }
+  .pub-card .now-label { background: transparent; color: #1a1712; border: 1px solid var(--accent); }
+  .now-text { font-size: 1rem; line-height: 1.35; }
+  .scroll-hint { margin-top: 2.5rem; opacity: .6; }
+
+  .featured-in { margin-top: 1.8rem; display: flex; flex-direction: column; gap: .35rem; }
+  .fi-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .14em; color: rgba(20,18,13,.5); }
+  .fi-outlets { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: 1rem; font-weight: 600; color: #1a1712; }
+  .fi-outlets a { border-bottom: 1px solid transparent; }
+  .fi-outlets a:hover { border-color: #1a1712; color: #1a1712; }
+  .fi-dot { color: rgba(20,18,13,.35); }
+
+  /* Book feature — cover + label, on the right at wide widths */
+  .book-feature {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .6rem;
+    border: none; max-width: 300px; justify-self: start;
+  }
+  .book-feature img {
+    width: 100%; height: auto; border-radius: 4px;
+    box-shadow: 0 14px 40px rgba(20,18,13,.28); display: block;
+    transition: transform .25s, box-shadow .25s;
+  }
+  .book-feature:hover img { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(20,18,13,.36); }
+  .book-feature:hover { color: #1a1712; }
+  .book-tag {
+    font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
+    padding: .15rem .5rem; border-radius: 999px; margin-top: .4rem;
+    background: var(--accent); color: #1a1712;
+  }
+  .book-title { font-size: 1.05rem; font-weight: 600; line-height: 1.25; }
+  .book-sum { font-size: .85rem; line-height: 1.4; }
+
+  @media (min-width: 860px) {
+    .surface-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 4rem; row-gap: 1.5rem;
+      align-items: start;
+    }
+    .surface-header { grid-column: 1; grid-row: 1; }
+    .surface-cards  { grid-column: 1; grid-row: 2; }
+    .book-feature   { grid-column: 2; grid-row: 1 / span 2; justify-self: end; align-self: center; }
+  }
+
+  /* Mobile: the header + book fill the first screen exactly, so the cards
+     begin below the fold — nothing peeks. Nav and credentials are sized to
+     stay on a single line at 390px width. */
+  @media (max-width: 859px) {
+    .strata .s0 { min-height: 100svh; }
+    /* The surface fills exactly one screen. The book grows to absorb the
+       leftover space between bio/socials and the bottom edge, so the book
+       sits at the bottom of the fold and the cards begin on the next screen.
+       Nothing peeks. */
+    .surface-grid {
+      display: flex; flex-direction: column;
+      min-height: 100svh;
+      gap: .9rem;
+      padding-top: 3.2rem;
+      box-sizing: border-box;
+    }
+    .surface-header { order: 1; flex: 0 0 auto; }
+    .book-feature   { order: 2; flex: 0 0 auto; margin-top: auto; }
+    .surface-cards  { order: 3; flex: 0 0 auto; margin-top: 100svh; }
+
+    .s0 h2 { font-size: clamp(2rem, 10vw, 2.9rem); }
+    .creds { font-size: .72rem; letter-spacing: 0; white-space: nowrap; }
+    .home-nav { margin-top: .85rem; gap: .9rem; flex-wrap: nowrap; }
+    .home-nav a { font-size: .88rem; }
+    .homebio { margin-top: .8rem; font-size: .94rem; line-height: 1.45; }
+    .socials { margin-top: .7rem; font-size: .78rem; }
+    .book-feature { gap: .25rem; }
+    .book-feature img { max-height: 40svh; width: auto; max-width: 100%; }
+    .book-tag { margin-top: .15rem; }
+    .book-title { font-size: .95rem; }
+    .book-sum { display: none; }
+  }
+
+  @media (max-width: 360px) {
+    .home-nav { flex-wrap: wrap; gap: .3rem .9rem; }
+    .creds { white-space: normal; }
+  }
+  .big { font-size: clamp(1.4rem, 3.5vw, 2.4rem); line-height: 1.25; max-width: 22ch; font-weight: 500; }
+  .s2 .big a, .s3 .big a { border-color: rgba(216,166,87,.6); }
+  .enter { margin-top: 2rem; font-size: .95rem; }
+
+  .feat { list-style: none; padding: 0; margin: 1rem 0 0; border-top: 1px solid var(--line); }
+  .feat li { border-bottom: 1px solid var(--line); }
+  .feat a { display: grid; grid-template-columns: 4.5rem 1fr; gap: .1rem 1rem; padding: 1rem 0; border: none; align-items: baseline; }
+  .feat a:hover .ft { color: var(--accent); }
+  .fy { grid-row: 1 / span 2; color: var(--muted); }
+  .ft { font-size: 1.2rem; font-weight: 600; transition: color .2s; }
+  .fs { font-size: .9rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stratum { position: relative; min-height: auto; padding: 4rem 0; }
+  }
+</style>

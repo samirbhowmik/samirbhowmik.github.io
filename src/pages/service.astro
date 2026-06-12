@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const all = (await getCollection('service'))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const order = ['editorial', 'leadership', 'networks', 'engagement', 'supervision', 'other'];
+const labels = {
+  editorial: 'Editorial',
+  leadership: 'Research leadership',
+  networks: 'International networks',
+  engagement: 'Public engagement',
+  supervision: 'Supervision',
+  other: 'Other',
+};
+const groups = order
+  .map(cat => ({ cat, items: all.filter(s => s.data.category === cat) }))
+  .filter(g => g.items.length);
+---
+<Base title="Service" description="Editorial roles, research leadership, networks, and public engagement by Samir Bhowmik.">
+  <section class="wrap" style="max-width:760px">
+    <h2 class="section">Service & Contributions</h2>
+    {groups.map(g => (
+      <section>
+        <h3 class="cat">{labels[g.cat]}</h3>
+        <ul class="svc">
+          {g.items.map(s => (
+            <li>
+              <span class="t">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
+              <span class="m mono muted">
+                {s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}
+              </span>
+              {s.data.summary && <p class="s muted">{s.data.summary}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </section>
+</Base>
+
+<style>
+  .cat { font-size: 1rem; margin: 2.2rem 0 .5rem; }
+  .svc { list-style: none; padding: 0; margin: 0; }
+  .svc li { padding: .8rem 0; border-bottom: 1px solid var(--line); }
+  .t { font-weight: 600; font-size: 1.02rem; display: block; }
+  .m { font-size: .76rem; }
+  .s { font-size: .9rem; margin: .35rem 0 0; }
+</style>

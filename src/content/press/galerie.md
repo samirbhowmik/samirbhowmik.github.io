@@ -1,0 +1,4 @@
+---
+outlet: Galerie
+marquee: false
+---

@@ -1,0 +1,133 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const projects = (await getCollection('projects'))
+  .sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order);
+
+// Build the facet vocabularies from the data itself.
+const facet = (key) => [...new Set(projects.flatMap(p => p.data[key]))].sort();
+const themes = facet('themes');
+const types = facet('type');
+const collaborators = facet('collaborators');
+const years = [...new Set(projects.map(p => p.data.year))].sort((a,b)=>b-a);
+---
+<Base title="Works" description="A queryable corpus of artistic and research works by Samir Bhowmik.">
+  <section class="wrap">
+    <h2 class="section">Works — Corpus</h2>
+    <p class="muted" style="max-width:60ch">
+      Filter the corpus by theme, form, collaborator, or year. Selecting several
+      facets narrows the field. Each work carries its scholarship with it.
+    </p>
+
+    <div class="facets" data-facets>
+      <div class="facet-group"><span class="facet-label">Theme</span>
+        {themes.map(t => <button class="tag" data-facet="themes" data-value={t}>{t}</button>)}
+      </div>
+      <div class="facet-group"><span class="facet-label">Form</span>
+        {types.map(t => <button class="tag" data-facet="type" data-value={t}>{t}</button>)}
+      </div>
+      <div class="facet-group"><span class="facet-label">With</span>
+        {collaborators.map(c => <button class="tag" data-facet="collaborators" data-value={c}>{c}</button>)}
+      </div>
+      <div class="facet-group"><span class="facet-label">Year</span>
+        {years.map(y => <button class="tag" data-facet="year" data-value={String(y)}>{y}</button>)}
+      </div>
+      <button class="tag clear" data-clear hidden>clear ✕</button>
+    </div>
+
+    <ul class="works" data-works>
+      {projects.map(p => (
+        <li class="work"
+            data-themes={p.data.themes.join('|')}
+            data-type={p.data.type.join('|')}
+            data-collaborators={p.data.collaborators.join('|')}
+            data-year={p.data.year}>
+          <a class="work-link" href={`/works/${p.id}`}>
+            <span class="work-year mono">{p.data.year}</span>
+            <span class="work-title">{p.data.title}</span>
+            <span class="work-summary muted">{p.data.summary}</span>
+            <span class="work-meta mono muted">
+              {p.data.type.join(' · ')}
+              {p.data.collaborators.length ? ` · w/ ${p.data.collaborators.join(', ')}` : ''}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="no-results muted mono" data-empty hidden>No works match that combination.</p>
+  </section>
+</Base>
+
+<style>
+  .facets { margin: 2rem 0; display: flex; flex-direction: column; gap: .9rem; }
+  .facet-group { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+  .facet-label { font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); width: 4.2rem; flex-shrink: 0; }
+  .clear { align-self: flex-start; margin-top: .3rem; }
+  .works { list-style: none; padding: 0; margin: 2.5rem 0 0; border-top: 1px solid var(--line); }
+  .work { border-bottom: 1px solid var(--line); }
+  .work-link { display: grid; grid-template-columns: 4.5rem 1fr; gap: .15rem 1rem; padding: 1.1rem 0; border: none; align-items: baseline; }
+  .work-link:hover { color: inherit; }
+  .work-link:hover .work-title { color: var(--accent); }
+  .work-year { grid-row: 1 / span 3; color: var(--muted); }
+  .work-title { font-size: 1.15rem; font-weight: 600; transition: color .2s; }
+  .work-summary { font-size: .92rem; }
+  .work-meta { font-size: .72rem; }
+  @media (max-width:560px){ .work-link{ grid-template-columns: 3.5rem 1fr; } }
+</style>
+
+<script>
+  const root = document.querySelector('[data-facets]');
+  const works = [...document.querySelectorAll('[data-works] .work')];
+  const empty = document.querySelector('[data-empty]');
+  const clearBtn = document.querySelector('[data-clear]');
+  // active filters: { facet -> Set(values) }
+  const active = {};
+
+  function apply() {
+    let visible = 0;
+    works.forEach(w => {
+      const ok = Object.entries(active).every(([facet, set]) => {
+        if (!set.size) return true;
+        const have = (w.dataset[facet] || '').split('|');
+        return [...set].some(v => have.includes(v));
+      });
+      w.hidden = !ok;
+      if (ok) visible++;
+    });
+    empty.hidden = visible !== 0;
+    const any = Object.values(active).some(s => s.size);
+    clearBtn.hidden = !any;
+  }
+
+  root.querySelectorAll('.tag[data-facet]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const { facet, value } = btn.dataset;
+      active[facet] = active[facet] || new Set();
+      if (active[facet].has(value)) { active[facet].delete(value); btn.dataset.active = 'false'; }
+      else { active[facet].add(value); btn.dataset.active = 'true'; }
+      apply();
+    });
+  });
+  clearBtn.addEventListener('click', () => {
+    Object.keys(active).forEach(k => active[k].clear());
+    root.querySelectorAll('.tag[data-facet]').forEach(b => b.dataset.active = 'false');
+    apply();
+  });
+
+  // Pre-apply a filter when arriving from a project page link,
+  // e.g. /works?theme=extraction or /works?with=Jussi%20Parikka
+  const params = new URLSearchParams(location.search);
+  const presets = [['theme', 'themes'], ['with', 'collaborators'], ['form', 'type'], ['year', 'year']];
+  for (const [param, facet] of presets) {
+    const val = params.get(param);
+    if (!val) continue;
+    const btn = root.querySelector(`.tag[data-facet="${facet}"][data-value="${val}"]`);
+    if (btn) {
+      active[facet] = active[facet] || new Set();
+      active[facet].add(val);
+      btn.dataset.active = 'true';
+    }
+  }
+  if ([...params.keys()].length) apply();
+</script>

@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const pubs = (await getCollection('publications'))
+  .sort((a, b) => (b.data.forthcoming - a.data.forthcoming) || b.data.year - a.data.year);
+
+const order = ['book', 'chapter', 'article', 'essay', 'talk', 'other'];
+const grouped = order
+  .map(kind => ({ kind, items: pubs.filter(p => p.data.kind === kind) }))
+  .filter(g => g.items.length);
+
+const labels = { book: 'Book', chapter: 'Chapters', article: 'Articles', essay: 'Essays', talk: 'Talks', other: 'Other' };
+---
+<Base title="Writing" description="Books, essays, and talks by Samir Bhowmik.">
+  <section class="wrap" style="max-width:760px">
+    <h2 class="section">Writing</h2>
+    {grouped.map(g => (
+      <section>
+        <h3 class="kind">{labels[g.kind]}</h3>
+        <ul class="pubs">
+          {g.items.map(p => (
+            <li id={p.id} class="pub">
+              <div class="pub-title">
+                {p.data.url ? <a href={p.data.url}>{p.data.title}</a> : p.data.title}
+                {p.data.forthcoming && <span class="badge mono">forthcoming</span>}
+              </div>
+              <div class="pub-meta mono muted">
+                {p.data.authors.join(', ')}
+                {p.data.venue && <> · {p.data.venue}</>}
+                {!p.data.forthcoming && <> · {p.data.year}</>}
+                {p.data.doi && <> · doi:{p.data.doi}</>}
+              </div>
+              {p.data.summary && <p class="pub-summary muted">{p.data.summary}</p>}
+              <p class="pub-actions mono">
+                {p.data.pdf && <a class="pdf-link" href={p.data.pdf}>PDF ↓</a>}
+                {p.data.relatedProjects.length > 0 && (
+                  <span class="pub-rel">
+                    → {p.data.relatedProjects.map((rp, i) => (
+                      <>{i > 0 && ', '}<a href={`/works/${rp}`}>{rp.replace(/-/g, ' ')}</a></>
+                    ))}
+                  </span>
+                )}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </section>
+</Base>
+
+<style>
+  .kind { font-size: 1rem; letter-spacing: .02em; margin: 2.5rem 0 .5rem; }
+  .pubs { list-style: none; padding: 0; margin: 0; }
+  .pub { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+  .pub-title { font-size: 1.1rem; font-weight: 600; }
+  .badge { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: .05rem .45rem; margin-left: .5rem; vertical-align: middle; }
+  .pub-meta { font-size: .78rem; margin-top: .2rem; }
+  .pub-summary { font-size: .92rem; margin: .4rem 0 0; }
+  .pub-actions { font-size: .75rem; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: baseline; }
+  .pdf-link { font-weight: 600; border: 1px solid var(--line); border-radius: 4px; padding: .15rem .5rem; color: var(--fg); }
+  .pdf-link:hover { border-color: var(--accent); color: var(--accent); }
+  .pub-rel { color: var(--muted); }
+</style>
