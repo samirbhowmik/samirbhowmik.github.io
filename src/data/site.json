@@ -12,14 +12,14 @@
     "date": "2026-06-01"
   },
   "links": {
+    "email": "you@example.com",
     "youtube": "https://youtube.com/@your-handle",
     "vimeo": "https://vimeo.com/your-handle",
-    "project": "https://www.uniarts.fi/en/projects/terra-performing/",
-    "email": "you@example.com"
+    "project": "https://www.uniarts.fi/en/projects/terra-performing/"
   },
   "social": {
     "linkedin": "https://www.linkedin.com/in/samirbhowmik",
-    "instagram": "https://www.instagram.com/your-handle",
+    "instagram": "https://www.instagram.com/_terraperforming/",
     "scholar": "https://scholar.google.com/citations?user=YOUR_ID",
     "orcid": "https://orcid.org/0000-0001-5830-614X"
   }
