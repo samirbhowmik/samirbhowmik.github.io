@@ -3,7 +3,7 @@ import { glob } from 'astro/loaders';
 
 // The CMS writes empty strings ("") for blank optional fields, which a strict
 // .url() check rejects and which breaks the build. Treat "" / null as "not set".
-const urlOpt = z.preprocess((v) => (v === '' || v == null ? undefined : v), urlOpt);
+const urlOpt = z.preprocess((v) => (v === '' || v == null ? undefined : v), z.string().url().optional());
 
 /**
  * PROJECTS — one Markdown file per work, in src/content/projects/.
