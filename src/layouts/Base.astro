@@ -71,14 +71,7 @@ const navLinks = [
       <slot />
     </main>
     <footer class="site-footer wrap">
-      <span>© {new Date().getFullYear()} {site.name} · {site.location}</span>
-      <span class="mono">
-        {site.links.youtube && <a href={site.links.youtube}>YouTube</a>}
-        {' · '}
-        {site.links.vimeo && <a href={site.links.vimeo}>Vimeo</a>}
-        {' · '}
-        <a href={`mailto:${site.links.email}`}>Email</a>
-      </span>
+      <span>© {new Date().getFullYear()} {site.name}</span>
     </footer>
 
     <script>

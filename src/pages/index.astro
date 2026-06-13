@@ -1,312 +1,654 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getCollection } from 'astro:content';
+import WorkCard from '../components/WorkCard.astro';
+import { getCollection, render } from 'astro:content';
 import site from '../data/site.json';
 
+/* ---------- PROJECTS (split Art vs Research) ---------- */
 const projects = await getCollection('projects');
-const featured = projects
-  .filter(p => p.data.featured)
-  .sort((a, b) => b.data.year - a.data.year);
-
-// The single most recent work, pulled automatically — no upkeep needed.
-const latest = [...projects].sort(
-  (a, b) => b.data.year - a.data.year || b.data.order - a.data.order
-)[0];
-
-// Feature a book on the homepage: prefer a forthcoming book, else the most
-// recent book. Pulled automatically from the publications collection.
+const projectsSorted = [...projects].sort(
+  (a, b) => b.data.year - a.data.year || a.data.order - b.data.order
+);
 const allPubs = await getCollection('publications');
+
+const workEntries = await Promise.all(
+  projectsSorted.map(async (p) => {
+    const { Content } = await render(p);
+    const d = p.data;
+    const relatedPubs = allPubs.filter(
+      (pub) => pub.data.relatedProjects.includes(p.id) || d.publication === pub.id
+    );
+    const related = projectsSorted
+      .filter((q) => q.id !== p.id)
+      .map((q) => {
+        const sharedThemes = q.data.themes.filter((t) => d.themes.includes(t));
+        const sharedPeople = q.data.collaborators.filter((c) => d.collaborators.includes(c));
+        return { q, score: sharedThemes.length + sharedPeople.length, shared: [...sharedThemes, ...sharedPeople] };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score || b.q.data.year - a.q.data.year)
+      .slice(0, 4);
+    return { p, d, Content, relatedPubs, related };
+  })
+);
+const artWorks = workEntries.filter((e) => !e.d.research);
+const researchWorks = workEntries.filter((e) => e.d.research).sort((a, b) => a.d.order - b.d.order);
+
+/* ---------- RESEARCH: publications + editorial ---------- */
+const pubsSorted = [...allPubs].sort(
+  (a, b) => (Number(b.data.forthcoming) - Number(a.data.forthcoming)) || b.data.year - a.data.year
+);
+const pubOrder = ['book', 'chapter', 'article', 'essay', 'review', 'other'];
+const pubLabels = { book: 'Book', chapter: 'Chapters', article: 'Articles', essay: 'Essays', review: 'Book reviews', other: 'Other' };
+const pubGroups = pubOrder
+  .map((kind) => ({ kind, items: pubsSorted.filter((p) => p.data.kind === kind) }))
+  .filter((g) => g.items.length);
+
+const svc = await getCollection('service');
+const byCat = (c) => svc.filter((s) => s.data.category === c).sort((a, b) => a.data.order - b.data.order);
+const editorialItems = byCat('editorial');
+const leadershipItems = byCat('leadership');
+const networkItems = byCat('networks');
+const engagementItems = byCat('engagement');
+
+/* ---------- TEACHING ---------- */
+const courses = (await getCollection('teaching')).sort((a, b) => a.data.order - b.data.order);
+
+/* ---------- PRESS (talks / interviews / media) ---------- */
+const pressAll = await getCollection('press');
+const byPress = (c) => pressAll
+  .filter((p) => (p.data.category || 'media') === c)
+  .sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0) || a.data.order - b.data.order);
+const mediaItems = byPress('media');
+const interviewItems = byPress('interview');
+const talkItems = byPress('talk');
+
+const talkCard = [...talkItems, ...interviewItems].map((t) => ({
+  text: t.data.title ? `${t.data.title} — ${t.data.outlet}` : t.data.outlet,
+}));
+
+/* ---------- CROSS-LINK TITLE LOOKUPS ---------- */
+const projTitle = Object.fromEntries(projects.map((p) => [p.id, p.data.title]));
+const pubTitle = Object.fromEntries(allPubs.map((p) => [p.id, p.data.title]));
+const svcTitle = Object.fromEntries(svc.map((s) => [s.id, s.data.title]));
+const xlinks = (s) => [
+  ...s.data.relatedProjects.map((id) => ({ href: `#${id}`, label: projTitle[id] || id })),
+  ...s.data.relatedPubs.map((id) => ({ href: `#${id}`, label: pubTitle[id] || id })),
+];
+
+/* ---------- SURFACE FEATURES ---------- */
 const books = allPubs
-  .filter(p => p.data.kind === 'book')
-  .sort((a, b) => (b.data.forthcoming - a.data.forthcoming) || b.data.year - a.data.year);
+  .filter((p) => p.data.kind === 'book')
+  .sort((a, b) => (Number(b.data.forthcoming) - Number(a.data.forthcoming)) || b.data.year - a.data.year);
 const book = books[0];
+const latest = artWorks[0]?.p;
+const latestPub = pubsSorted.filter((p) => p.data.kind !== 'book')[0];
+const featuredPress = mediaItems.filter((p) => p.data.marquee);
 
-// The most recent peer-reviewed publication that isn't a book — articles,
-// chapters, essays. Pulled automatically; forthcoming items rank first.
-const latestPub = allPubs
-  .filter(p => p.data.kind !== 'book')
-  .sort((a, b) => (b.data.forthcoming - a.data.forthcoming) || b.data.year - a.data.year)[0];
-
-// Marquee press outlets for the "As featured in" strip.
-const featuredPress = (await getCollection('press'))
-  .filter(p => p.data.marquee)
-  .sort((a, b) => a.data.order - b.data.order);
-
-// The manually-edited "Now" announcement (current event/lecture), if present.
-const now = site.now;
+const sections = [
+  { id: 'art', label: 'Art' },
+  { id: 'research', label: 'Research' },
+  { id: 'teaching', label: 'Teaching' },
+  { id: 'press', label: 'Press' },
+  { id: 'about', label: 'About' },
+];
 ---
 <Base>
-  <!-- Stratigraphic intro: scroll descends from surface (who) to deep (why). -->
-  <section class="strata">
-    <div class="stratum s0">
-      <div class="wrap inner surface-grid">
-        <div class="surface-header">
-          <p class="depth mono">0 m · surface</p>
-          <h2>{site.name}</h2>
-          {site.credentials && <p class="creds mono">{site.credentials} · {site.location}</p>}
+  <header class="topbar mono" data-topbar>
+    <a class="tb-name" href="#top">{site.name}</a>
+    <nav class="tb-links" aria-label="Sections">
+      {sections.map((s) => <a href={`#${s.id}`} data-dlink={s.id}>{s.label}</a>)}
+    </nav>
+    <div class="tb-right">
+      <button type="button" class="tb-collapse" data-collapse-all>Collapse all</button>
+      <button type="button" class="tb-menu" data-menu-toggle aria-label="Open sections menu" aria-expanded="false">Menu</button>
+    </div>
+    <div class="tb-drawer" data-drawer hidden>
+      {sections.map((s) => <a href={`#${s.id}`} data-drawer-link>{s.label}</a>)}
+      <button type="button" class="tb-collapse" data-collapse-all>Collapse all</button>
+    </div>
+  </header>
 
-          <nav class="home-nav">
-            <a href="/works">Works</a>
-            <a href="/publications">Writing</a>
-            <a href="/teaching">Teaching</a>
-            <a href="/press">Press</a>
-            <a href="/service">Service</a>
-            <a href="/about">About</a>
-          </nav>
+  <!-- 0 · SURFACE -->
+  <section id="top" class="surface">
+    <div class="wrap surface-grid">
+      <div class="surface-header">
+        <p class="depth mono">0 m · surface</p>
+        <h1>{site.name}</h1>
+        <p class="homebio">{site.bio}</p>
+        {site.social && (
+          <p class="socials mono">
+            {site.social.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
+            {site.social.instagram && <> · <a href={site.social.instagram}>Instagram</a></>}
+            {site.social.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
+            {site.social.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
+          </p>
+        )}
+      </div>
 
-          <p class="homebio">{site.homeBio || site.bio}</p>
+      {book && (
+        <a class="book-feature" href="#research">
+          {book.data.cover && <img src={book.data.cover} alt={book.data.title} loading="lazy" />}
+          <span class="book-tag mono">{book.data.forthcoming ? 'Forthcoming book' : 'New book'}</span>
+          <span class="book-title">{book.data.title}</span>
+          {book.data.summary && <span class="book-sum muted">{book.data.summary}</span>}
+        </a>
+      )}
 
-          {site.social && (
-            <p class="socials mono">
-              {site.social.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
-              {site.social.instagram && <> · <a href={site.social.instagram}>Instagram</a></>}
-              {site.social.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
-              {site.social.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
-            </p>
+      <div class="surface-cards">
+        <div class="current">
+          {talkCard.length > 0 && (
+            <a class="now talk-card" href="#press">
+              <span class="now-label mono">Talk</span>
+              <span class="now-text" data-talk>{talkCard[0].text}</span>
+            </a>
+          )}
+          {latest && (
+            <a class="latest" href={`#${latest.id}`}>
+              <span class="now-label mono">Latest work</span>
+              <span class="now-text">{latest.data.title} <span class="muted">({latest.data.year})</span></span>
+            </a>
+          )}
+          {latestPub && (
+            <a class="pub-card" href={`#${latestPub.id}`}>
+              <span class="now-label mono">New publication</span>
+              <span class="now-text">{latestPub.data.title}{latestPub.data.venue && <span class="muted"> · {latestPub.data.venue}</span>}</span>
+            </a>
           )}
         </div>
 
-        {book && (
-          <a class="book-feature" href={book.data.url || '/publications#' + book.id}>
-            {book.data.cover && <img src={book.data.cover} alt={book.data.title} />}
-            <span class="book-tag mono">{book.data.forthcoming ? 'Forthcoming book' : 'New book'}</span>
-            <span class="book-title">{book.data.title}</span>
-            {book.data.summary && <span class="book-sum muted">{book.data.summary}</span>}
-          </a>
+        {featuredPress.length > 0 && (
+          <div class="featured-in">
+            <span class="fi-label mono">As featured in</span>
+            <span class="fi-outlets">
+              {featuredPress.map((p, i) => (
+                <>
+                  {i > 0 && <span class="fi-dot">·</span>}
+                  {p.data.url ? <a href={p.data.url}>{p.data.outlet}</a> : <span>{p.data.outlet}</span>}
+                </>
+              ))}
+            </span>
+          </div>
         )}
 
-        <div class="surface-cards">
-          <div class="current">
-            {now && now.text && (
-              <a class="now" href={now.url || '#'}>
-                <span class="now-label mono">{now.label || 'Now'}</span>
-                <span class="now-text">{now.text}</span>
-              </a>
-            )}
-            {latest && (
-              <a class="latest" href={`/works/${latest.id}`}>
-                <span class="now-label mono">Latest work</span>
-                <span class="now-text">{latest.data.title} <span class="muted">({latest.data.year})</span></span>
-              </a>
-            )}
-            {latestPub && (
-              <a class="pub-card" href={latestPub.data.url || '/publications#' + latestPub.id}>
-                <span class="now-label mono">New publication</span>
-                <span class="now-text">{latestPub.data.title}{latestPub.data.venue && <span class="muted"> · {latestPub.data.venue}</span>}</span>
-              </a>
-            )}
-          </div>
-
-          {featuredPress.length > 0 && (
-            <div class="featured-in">
-              <span class="fi-label mono">As featured in</span>
-              <span class="fi-outlets">
-                {featuredPress.map((p, i) => (
-                  <>
-                    {i > 0 && <span class="fi-dot">·</span>}
-                    {p.data.url ? <a href={p.data.url}>{p.data.outlet}</a> : <span>{p.data.outlet}</span>}
-                  </>
-                ))}
-              </span>
-            </div>
-          )}
-
-          <p class="scroll-hint mono">scroll to descend ↓</p>
-        </div>
+        <p class="scroll-hint mono">scroll to descend ↓</p>
       </div>
     </div>
-    <div class="stratum s1">
-      <div class="wrap inner">
-        <p class="depth mono">−1 · practice</p>
-        <p class="big">Performance, installation, and moving image that treat
-        infrastructure as something performed — and excavated.</p>
+  </section>
+
+  <div class="corpus">
+
+    <!-- −1 · ART -->
+    <section id="art" class="sec">
+      <header class="sec-head wrap">
+        <p class="depth mono">−1 · art</p>
+        <h2 class="sec-title">Art</h2>
+      </header>
+      <div class="wrap works">
+        {artWorks.map((e) => <WorkCard entry={e} />)}
       </div>
-    </div>
-    <div class="stratum s2">
-      <div class="wrap inner">
+      <p class="enter mono wrap"><a href="#top">↑ Return to the surface</a></p>
+    </section>
+
+    <!-- −2 · RESEARCH -->
+    <section id="research" class="sec">
+      <header class="sec-head wrap">
         <p class="depth mono">−2 · research</p>
-        <p class="big">Academy of Finland Research Fellow at Uniarts Helsinki,
-        working on extractivism and ecology through the
-        <a href={site.links.project}>Terra-Performing</a> framework.</p>
-      </div>
-    </div>
-    <div class="stratum s3">
-      <div class="wrap inner">
-        <p class="depth mono">−3 · substrate</p>
-        <p class="big">A book, a body of works, and the threads between them —
-        explored below as a corpus you can filter by theme, form, and collaborator.</p>
-        <p class="enter mono">
-          <a href="/works">Enter the corpus →</a>
-        </p>
-      </div>
-    </div>
-  </section>
+        <h2 class="sec-title">Research</h2>
+      </header>
+      <div class="wrap narrow">
+        {pubGroups.map((g) => (
+          <section class="subsec">
+            <h3 class="kind">{pubLabels[g.kind]}</h3>
+            <ul class="pubs">
+              {g.items.map((p) => (
+                <li id={p.id} class="pub">
+                  <div class="pub-title">
+                    {p.data.url ? <a href={p.data.url}>{p.data.title}</a> : p.data.title}
+                    {p.data.forthcoming && <span class="badge mono">forthcoming</span>}
+                  </div>
+                  <div class="pub-meta mono muted">
+                    {p.data.authors.join(', ')}
+                    {p.data.venue && <> · {p.data.venue}</>}
+                    {!p.data.forthcoming && <> · {p.data.year}</>}
+                    {p.data.doi && <> · doi:{p.data.doi}</>}
+                  </div>
+                  {p.data.summary && <p class="pub-summary muted">{p.data.summary}</p>}
+                  {(p.data.pdf || p.data.relatedProjects.length > 0) && (
+                    <p class="pub-actions mono">
+                      {p.data.pdf && <a class="pdf-link" href={p.data.pdf}>PDF ↓</a>}
+                      {p.data.relatedProjects.length > 0 && (
+                        <span class="pub-rel">→ {p.data.relatedProjects.map((rp, i) => (
+                          <>{i > 0 && ', '}<a href={`#${rp}`}>{projTitle[rp] || rp.replace(/-/g, ' ')}</a></>
+                        ))}</span>
+                      )}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
 
-  <section class="wrap">
-    <h2 class="section">Featured works</h2>
-    <ul class="feat">
-      {featured.map(p => (
-        <li>
-          <a href={`/works/${p.id}`}>
-            <span class="fy mono">{p.data.year}</span>
-            <span class="ft">{p.data.title}</span>
-            <span class="fs muted">{p.data.summary}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-    <p class="mono" style="margin-top:1.5rem"><a href="/works">All works →</a></p>
-  </section>
+        {researchWorks.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Research projects</h3>
+            <div class="works">
+              {researchWorks.map((e) => <WorkCard entry={e} />)}
+            </div>
+          </section>
+        )}
+
+        {editorialItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Editorial</h3>
+            <ul class="rows">
+              {editorialItems.map((s) => (
+                <li class="row" id={s.id}>
+                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
+                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
+                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <p class="enter mono"><a href="#top">↑ Return to the surface</a></p>
+      </div>
+    </section>
+
+    <!-- −3 · TEACHING -->
+    <section id="teaching" class="sec">
+      <header class="sec-head wrap">
+        <p class="depth mono">−3 · teaching</p>
+        <h2 class="sec-title">Teaching</h2>
+      </header>
+      <div class="wrap narrow">
+        <p class="muted lead">Research-led courses and seminars, several developed with biennials, museums, and partner institutions.</p>
+        <ul class="rows">
+          {courses.map((c) => (
+            <li class="row">
+              <span class="row-title big-title">{c.data.title}</span>
+              <span class="row-meta mono muted">
+                {c.data.institution}
+                {c.data.level && <> · {c.data.level}</>}
+                {c.data.credits && <> · {c.data.credits}</>}
+                {c.data.years && <> · {c.data.years}</>}
+                {c.data.role && <> · {c.data.role}</>}
+              </span>
+              {c.data.summary && <p class="row-sum muted">{c.data.summary}</p>}
+              {c.data.partners.length > 0 && <p class="row-sum mono muted">with {c.data.partners.join(', ')}</p>}
+              {(c.data.links.length > 0 || c.data.related.length > 0) && (
+                <p class="row-links mono">
+                  {c.data.links.map((l) => <a class="xlink" href={l.url}>↗ {l.label}</a>)}
+                  {c.data.related.map((rid) => <a class="xlink" href={`#${rid}`}>→ {svcTitle[rid] || pubTitle[rid] || rid}</a>)}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p class="enter mono"><a href="#top">↑ Return to the surface</a></p>
+      </div>
+    </section>
+
+    <!-- −4 · PRESS -->
+    <section id="press" class="sec">
+      <header class="sec-head wrap">
+        <p class="depth mono">−4 · press</p>
+        <h2 class="sec-title">Press, Interviews &amp; Talks</h2>
+      </header>
+      <div class="wrap narrow">
+        {talkItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Lectures &amp; Talks</h3>
+            <ul class="entries">
+              {talkItems.map((p) => (
+                <li class="entry">
+                  <a class="entry-title" href={p.data.url || '#'}>{p.data.title || p.data.outlet}</a>
+                  <span class="entry-meta mono muted">{p.data.outlet}{(p.data.date || p.data.year) ? ` · ${p.data.date || p.data.year}` : ''}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {interviewItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Interviews</h3>
+            <ul class="entries">
+              {interviewItems.map((p) => (
+                <li class="entry">
+                  <a class="entry-title" href={p.data.url || '#'}>{p.data.title || p.data.outlet}</a>
+                  <span class="entry-meta mono muted">{p.data.outlet}{(p.data.date || p.data.year) ? ` · ${p.data.date || p.data.year}` : ''}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {mediaItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Selected media coverage</h3>
+            <ul class="refs">
+              {mediaItems.map((p) => (
+                <li class="ref">
+                  <span class="ref-date mono muted">{p.data.date || p.data.year}</span>
+                  <span class="ref-main">
+                    {p.data.url ? <a class="ref-outlet" href={p.data.url}>{p.data.outlet}</a> : <span class="ref-outlet">{p.data.outlet}</span>}
+                    {p.data.title && <span class="ref-title muted"> — {p.data.title}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <p class="enter mono"><a href="#top">↑ Return to the surface</a></p>
+      </div>
+    </section>
+
+    <!-- −5 · ABOUT / SUBSTRATE -->
+    <section id="about" class="sec">
+      <header class="sec-head wrap">
+        <p class="depth mono">−5 · substrate</p>
+        <h2 class="sec-title">About</h2>
+      </header>
+      <div class="wrap narrow">
+        <p class="bio">{site.bio}</p>
+
+        {leadershipItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Research leadership</h3>
+            <ul class="rows">
+              {leadershipItems.map((s) => (
+                <li class="row" id={s.id}>
+                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
+                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
+                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
+                  {xlinks(s).length > 0 && <p class="row-links mono">{xlinks(s).map((x) => <a class="xlink" href={x.href}>→ {x.label}</a>)}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {networkItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">International networks</h3>
+            <ul class="rows">
+              {networkItems.map((s) => (
+                <li class="row" id={s.id}>
+                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
+                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
+                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
+                  {xlinks(s).length > 0 && <p class="row-links mono">{xlinks(s).map((x) => <a class="xlink" href={x.href}>→ {x.label}</a>)}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {engagementItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Public engagement</h3>
+            <ul class="rows">
+              {engagementItems.map((s) => (
+                <li class="row" id={s.id}>
+                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
+                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
+                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section class="subsec">
+          <h3 class="kind">Contact &amp; links</h3>
+          <p class="contact-line mono">
+            <a href={`mailto:${site.links.email}`}>Email</a>
+            {site.social?.linkedin && <> · <a href={site.social.linkedin}>LinkedIn</a></>}
+            {site.social?.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
+            {site.social?.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
+            {site.social?.instagram && <> · <a href={site.social.instagram}>Instagram</a></>}
+            {site.links.project && <> · <a href={site.links.project}>Terra-Performing</a></>}
+          </p>
+        </section>
+
+        <p class="enter mono"><a href="#top">↑ Return to the surface</a></p>
+      </div>
+    </section>
+  </div>
+
+  <script id="talks-data" type="application/json" set:html={JSON.stringify(talkCard)} is:inline></script>
 </Base>
 
-<style>
-  /* Each stratum pins briefly (sticky) so the next slides up over it —
-     the "digging through layers" feel, pure CSS, no JS. */
-  .strata { }
-  .stratum {
-    position: sticky; top: 0; min-height: 100vh;
-    display: flex; align-items: center;
+<script>
+  function openTarget(id: string) {
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const det = (el.tagName.toLowerCase() === 'details' ? el : el.querySelector('details')) as HTMLDetailsElement | null;
+    if (det) det.open = true;
+    el.scrollIntoView({ block: 'start' });
   }
-  .inner { width: 100%; }
-  .depth { font-size: .72rem; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.2rem; }
-  .s0 { background: var(--surface); color: #1a1712; }
-  .s1 { background: var(--layer-2); color: #14110d; }
-  .s2 { background: var(--layer-3); color: var(--surface); }
-  .s3 { background: var(--deep); color: var(--fg); }
-  .s0 h2 { font-size: clamp(2.5rem, 8vw, 5rem); margin: 0; line-height: 1; letter-spacing: -.02em; }
-  .lede { font-size: 1.2rem; margin-top: .5rem; }
-  .creds { font-size: .82rem; letter-spacing: .04em; color: rgba(20,18,13,.6); margin: .3rem 0 0; }
-  .socials { font-size: .85rem; margin: 1.1rem 0 0; color: rgba(20,18,13,.55); }
+  window.addEventListener('hashchange', () => openTarget(decodeURIComponent(location.hash.slice(1))));
+  window.addEventListener('load', () => { if (location.hash) setTimeout(() => openTarget(decodeURIComponent(location.hash.slice(1))), 60); });
+  document.addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest('a[href^="#"]') as HTMLAnchorElement | null;
+    if (!a) return;
+    const id = decodeURIComponent(a.getAttribute('href')!.slice(1));
+    const el = id && document.getElementById(id);
+    if (el) { const det = el.querySelector('details') as HTMLDetailsElement | null; if (det) det.open = true; }
+  });
+
+  const dlinks = [...document.querySelectorAll('[data-dlink]')] as HTMLElement[];
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (en.isIntersecting) {
+        const id = (en.target as HTMLElement).id;
+        dlinks.forEach((l) => l.classList.toggle('active', l.getAttribute('data-dlink') === id));
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  document.querySelectorAll('.corpus .sec').forEach((s) => spy.observe(s));
+
+  const drawer = document.querySelector('[data-drawer]') as HTMLElement | null;
+  const toggle = document.querySelector('[data-menu-toggle]');
+  const setDrawer = (open: boolean) => {
+    if (!drawer) return;
+    drawer.hidden = !open;
+    toggle?.setAttribute('aria-expanded', String(open));
+  };
+  toggle?.addEventListener('click', () => setDrawer(drawer?.hidden ?? true));
+  document.querySelectorAll('[data-drawer-link]').forEach((l) => l.addEventListener('click', () => setDrawer(false)));
+  document.querySelectorAll('[data-collapse-all]').forEach((b) =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('details[open]').forEach((d) => ((d as HTMLDetailsElement).open = false));
+      setDrawer(false);
+    })
+  );
+
+  const talkEl = document.querySelector('[data-talk]');
+  const raw = document.getElementById('talks-data')?.textContent;
+  if (talkEl && raw) {
+    try {
+      const talks = JSON.parse(raw) as { text: string }[];
+      if (talks.length > 1) {
+        let idx = Math.floor(Math.random() * talks.length);
+        talkEl.textContent = talks[idx].text;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        setInterval(() => {
+          let next = Math.floor(Math.random() * talks.length);
+          if (next === idx) next = (next + 1) % talks.length;
+          idx = next;
+          if (reduce) { talkEl.textContent = talks[idx].text; return; }
+          (talkEl as HTMLElement).style.transition = 'opacity .4s';
+          (talkEl as HTMLElement).style.opacity = '0';
+          setTimeout(() => { talkEl.textContent = talks[idx].text; (talkEl as HTMLElement).style.opacity = '1'; }, 400);
+        }, 5000);
+      } else if (talks.length === 1) {
+        talkEl.textContent = talks[0].text;
+      }
+    } catch {}
+  }
+</script>
+
+<style>
+  /* ---------- Persistent menu bar ---------- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 80;
+    display: flex; align-items: center; gap: 1.2rem; padding: .55rem 1.3rem;
+    background: color-mix(in srgb, #14110d 72%, transparent);
+    backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.09);
+    font-size: .82rem;
+  }
+  .tb-name { color: var(--surface); font-weight: 600; border: none; white-space: nowrap; letter-spacing: .01em; }
+  .tb-name:hover { color: var(--accent); }
+  .tb-links { display: flex; gap: 1.2rem; flex: 1; }
+  .tb-links a { color: rgba(236,232,224,.72); border: none; }
+  .tb-links a:hover { color: var(--surface); }
+  .tb-links a.active { color: var(--accent); }
+  .tb-right { display: flex; align-items: center; gap: .7rem; margin-left: auto; }
+  .tb-collapse, .tb-menu {
+    background: none; border: 1px solid rgba(255,255,255,.2); color: rgba(236,232,224,.8);
+    border-radius: 999px; padding: .3rem .75rem; cursor: pointer;
+    font-family: var(--font-mono); font-size: .72rem; transition: border-color .2s, color .2s;
+  }
+  .tb-collapse:hover, .tb-menu:hover { border-color: var(--accent); color: var(--accent); }
+  .tb-menu { display: none; }
+  .tb-drawer { display: none; }
+  @media (max-width: 720px) {
+    .tb-links { display: none; }
+    .tb-right .tb-collapse { display: none; }
+    .tb-menu { display: inline-block; }
+    .tb-drawer[hidden] { display: none; }
+    .tb-drawer {
+      position: absolute; top: 100%; left: 0; right: 0;
+      display: flex; flex-direction: column; gap: .2rem; padding: .6rem 1.3rem 1rem;
+      background: color-mix(in srgb, #14110d 94%, transparent); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .tb-drawer a { color: var(--surface); border: none; font-size: 1.05rem; padding: .5rem 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .tb-drawer a:hover { color: var(--accent); }
+    .tb-drawer .tb-collapse { align-self: flex-start; margin-top: .6rem; }
+  }
+
+  .depth { font-size: .72rem; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin: 0 0 1rem; }
+
+  /* ---------- 0 · Surface ---------- */
+  .surface { background: linear-gradient(180deg, var(--surface) 0%, var(--layer-1) 100%); color: #1a1712; min-height: 100svh; display: flex; align-items: center; padding: 5rem 0 4rem; }
+  .surface .depth { color: rgba(20,18,13,.5); }
+  .surface h1 { font-size: clamp(2.3rem, 7vw, 4.4rem); margin: 0; line-height: 1; letter-spacing: -.02em; }
+  .homebio { font-size: 1rem; line-height: 1.55; max-width: 50ch; margin: 1.3rem 0 0; color: #2a2722; }
+  .socials { font-size: .85rem; margin: 1.2rem 0 0; color: rgba(20,18,13,.55); }
   .socials a { color: #1a1712; border-bottom: 1px solid transparent; }
   .socials a:hover { border-color: var(--accent); }
-  .home-nav {
-    display: flex; flex-wrap: wrap; gap: .35rem 1.4rem; margin: 1.4rem 0 0;
-  }
-  .home-nav a {
-    font-size: 1.05rem; font-weight: 600; color: #1a1712; border: none;
-    border-bottom: 2px solid transparent; padding-bottom: 1px; transition: border-color .2s;
-  }
-  .home-nav a:hover { border-color: var(--accent); color: #1a1712; }
-  /* Mobile-first: single column, ordered header -> book -> cards. */
-  .surface-grid {
-    display: flex; flex-direction: column; gap: 2rem;
-  }
+  .surface-grid { display: flex; flex-direction: column; gap: 2rem; }
   .surface-header { order: 1; }
-  .book-feature { order: 2; }
+  .book-feature { order: 2; display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; border: none; max-width: 280px; }
+  .book-feature img { width: 100%; height: auto; border-radius: 4px; box-shadow: 0 14px 40px rgba(20,18,13,.28); display: block; transition: transform .25s, box-shadow .25s; }
+  .book-feature:hover img { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(20,18,13,.36); }
+  .book-feature:hover { color: #1a1712; }
+  .book-tag { font-size: .62rem; text-transform: uppercase; letter-spacing: .12em; padding: .15rem .5rem; border-radius: 999px; background: var(--accent); color: #1a1712; }
+  .book-title { font-size: 1.05rem; font-weight: 600; line-height: 1.25; color: #1a1712; }
+  .book-sum { font-size: .85rem; line-height: 1.4; color: rgba(20,18,13,.65); }
   .surface-cards { order: 3; }
-  .homebio {
-    font-size: 1.02rem; line-height: 1.55; max-width: 46ch;
-    margin: 1.2rem 0 0; color: #2a2722;
-  }
-  .current { margin-top: 1.6rem; display: flex; flex-direction: column; gap: .6rem; max-width: 38rem; }
-  .now, .latest, .pub-card {
-    display: flex; align-items: baseline; gap: .85rem;
-    padding: .7rem .9rem; border: 1px solid rgba(20,18,13,.18);
-    border-radius: 6px; background: rgba(20,18,13,.03);
-    transition: border-color .2s, background .2s;
-  }
+  .current { display: flex; flex-direction: column; gap: .6rem; max-width: 38rem; }
+  .now, .latest, .pub-card { display: flex; align-items: baseline; gap: .85rem; padding: .7rem .9rem; border: 1px solid rgba(20,18,13,.18); border-radius: 6px; background: rgba(20,18,13,.03); color: #1a1712; transition: border-color .2s, background .2s; }
   .now:hover, .latest:hover, .pub-card:hover { border-color: #1a1712; background: rgba(20,18,13,.07); color: #1a1712; }
   .pub-card { border-left: 3px solid var(--accent); }
-  .now-label {
-    font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
-    padding: .15rem .5rem; border-radius: 999px; flex-shrink: 0;
-    background: #1a1712; color: var(--surface);
-  }
-  .now .now-label { background: var(--accent); color: #1a1712; }
+  .now-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .12em; padding: .15rem .5rem; border-radius: 999px; flex-shrink: 0; background: #1a1712; color: var(--surface); }
+  .talk-card .now-label { background: var(--accent); color: #1a1712; }
   .pub-card .now-label { background: transparent; color: #1a1712; border: 1px solid var(--accent); }
   .now-text { font-size: 1rem; line-height: 1.35; }
-  .scroll-hint { margin-top: 2.5rem; opacity: .6; }
-
   .featured-in { margin-top: 1.8rem; display: flex; flex-direction: column; gap: .35rem; }
   .fi-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .14em; color: rgba(20,18,13,.5); }
   .fi-outlets { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: 1rem; font-weight: 600; color: #1a1712; }
-  .fi-outlets a { border-bottom: 1px solid transparent; }
-  .fi-outlets a:hover { border-color: #1a1712; color: #1a1712; }
+  .fi-outlets a { border-bottom: 1px solid transparent; color: #1a1712; }
+  .fi-outlets a:hover { border-color: #1a1712; }
   .fi-dot { color: rgba(20,18,13,.35); }
-
-  /* Book feature — cover + label, on the right at wide widths */
-  .book-feature {
-    display: flex; flex-direction: column; align-items: flex-start; gap: .6rem;
-    border: none; max-width: 300px; justify-self: start;
-  }
-  .book-feature img {
-    width: 100%; height: auto; border-radius: 4px;
-    box-shadow: 0 14px 40px rgba(20,18,13,.28); display: block;
-    transition: transform .25s, box-shadow .25s;
-  }
-  .book-feature:hover img { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(20,18,13,.36); }
-  .book-feature:hover { color: #1a1712; }
-  .book-tag {
-    font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
-    padding: .15rem .5rem; border-radius: 999px; margin-top: .4rem;
-    background: var(--accent); color: #1a1712;
-  }
-  .book-title { font-size: 1.05rem; font-weight: 600; line-height: 1.25; }
-  .book-sum { font-size: .85rem; line-height: 1.4; }
-
+  .scroll-hint { margin-top: 2.5rem; opacity: .55; color: rgba(20,18,13,.7); }
   @media (min-width: 860px) {
-    .surface-grid {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      grid-template-rows: auto auto;
-      column-gap: 4rem; row-gap: 1.5rem;
-      align-items: start;
-    }
+    .surface-grid { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: auto auto; column-gap: 4rem; row-gap: 1.5rem; align-items: start; }
     .surface-header { grid-column: 1; grid-row: 1; }
     .surface-cards  { grid-column: 1; grid-row: 2; }
     .book-feature   { grid-column: 2; grid-row: 1 / span 2; justify-self: end; align-self: center; }
   }
-
-  /* Mobile: the header + book fill the first screen exactly, so the cards
-     begin below the fold — nothing peeks. Nav and credentials are sized to
-     stay on a single line at 390px width. */
+  /* Mobile: shrink name + bio, push the book to the bottom of the first screen
+     so the cover is visible on landing without scrolling. */
   @media (max-width: 859px) {
-    .strata .s0 { min-height: 100svh; }
-    /* The surface fills exactly one screen. The book grows to absorb the
-       leftover space between bio/socials and the bottom edge, so the book
-       sits at the bottom of the fold and the cards begin on the next screen.
-       Nothing peeks. */
-    .surface-grid {
-      display: flex; flex-direction: column;
-      min-height: 100svh;
-      gap: .9rem;
-      padding-top: 3.2rem;
-      box-sizing: border-box;
-    }
-    .surface-header { order: 1; flex: 0 0 auto; }
-    .book-feature   { order: 2; flex: 0 0 auto; margin-top: auto; }
-    .surface-cards  { order: 3; flex: 0 0 auto; margin-top: 100svh; }
-
-    .s0 h2 { font-size: clamp(2rem, 10vw, 2.9rem); }
-    .creds { font-size: .72rem; letter-spacing: 0; white-space: nowrap; }
-    .home-nav { margin-top: .85rem; gap: .9rem; flex-wrap: nowrap; }
-    .home-nav a { font-size: .88rem; }
-    .homebio { margin-top: .8rem; font-size: .94rem; line-height: 1.45; }
+    .surface { min-height: 100svh; padding: 4.2rem 0 1.5rem; }
+    .surface-grid { min-height: calc(100svh - 5.7rem); gap: .9rem; }
+    .surface h1 { font-size: clamp(1.7rem, 8vw, 2.5rem); }
+    .homebio { font-size: .88rem; line-height: 1.45; margin-top: 1rem; }
     .socials { margin-top: .7rem; font-size: .78rem; }
-    .book-feature { gap: .25rem; }
-    .book-feature img { max-height: 40svh; width: auto; max-width: 100%; }
-    .book-tag { margin-top: .15rem; }
-    .book-title { font-size: .95rem; }
+    .book-feature { margin-top: auto; align-self: center; max-width: 220px; }
+    .book-feature img { max-height: 34svh; width: auto; }
     .book-sum { display: none; }
+    .surface-cards { margin-top: 1.4rem; }
   }
 
-  @media (max-width: 360px) {
-    .home-nav { flex-wrap: wrap; gap: .3rem .9rem; }
-    .creds { white-space: normal; }
-  }
-  .big { font-size: clamp(1.4rem, 3.5vw, 2.4rem); line-height: 1.25; max-width: 22ch; font-weight: 500; }
-  .s2 .big a, .s3 .big a { border-color: rgba(216,166,87,.6); }
-  .enter { margin-top: 2rem; font-size: .95rem; }
+  /* ---------- Corpus ---------- */
+  .corpus { background: linear-gradient(180deg, #221f1a 0%, var(--deep) 45%, #0a0908 100%); }
+  .corpus [id] { scroll-margin-top: 4.2rem; }
+  .narrow { max-width: 760px; }
+  .sec { padding: 3.5rem 0; border-top: 1px solid rgba(255,255,255,.05); }
+  .sec-head { margin-bottom: 1.5rem; }
+  .sec-title { font-size: clamp(1.7rem, 4.5vw, 2.4rem); margin: 0; line-height: 1.05; letter-spacing: -.01em; }
+  .works { display: flex; flex-direction: column; gap: 3rem; }
+  .enter { margin-top: 2.5rem; }
+  .subsec { margin-bottom: 2.5rem; }
 
-  .feat { list-style: none; padding: 0; margin: 1rem 0 0; border-top: 1px solid var(--line); }
-  .feat li { border-bottom: 1px solid var(--line); }
-  .feat a { display: grid; grid-template-columns: 4.5rem 1fr; gap: .1rem 1rem; padding: 1rem 0; border: none; align-items: baseline; }
-  .feat a:hover .ft { color: var(--accent); }
-  .fy { grid-row: 1 / span 2; color: var(--muted); }
-  .ft { font-size: 1.2rem; font-weight: 600; transition: color .2s; }
-  .fs { font-size: .9rem; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .stratum { position: relative; min-height: auto; padding: 4rem 0; }
+  /* ---------- Sub-section header (hierarchy) ---------- */
+  .kind {
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .18em; font-weight: 600;
+    color: var(--accent); margin: 0 0 1.1rem; padding-bottom: .55rem;
+    border-bottom: 1px solid rgba(216,166,87,.28);
   }
+
+  /* Publications */
+  .pubs { list-style: none; padding: 0; margin: 0; }
+  .pub { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+  .pub-title { font-size: 1.1rem; font-weight: 600; }
+  .badge { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: .05rem .45rem; margin-left: .5rem; vertical-align: middle; }
+  .pub-meta { font-size: .78rem; margin-top: .2rem; }
+  .pub-summary { font-size: .92rem; margin: .4rem 0 0; }
+  .pub-actions { font-size: .75rem; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: baseline; }
+  .pdf-link { font-weight: 600; border: 1px solid var(--line); border-radius: 4px; padding: .15rem .5rem; }
+  .pdf-link:hover { border-color: var(--accent); color: var(--accent); }
+  .pub-rel { color: var(--muted); }
+
+  /* Generic rows (editorial / teaching / about groups) */
+  .lead { max-width: 60ch; margin-bottom: 1.5rem; }
+  .rows { list-style: none; padding: 0; margin: 0; }
+  .row { padding: .9rem 0; border-bottom: 1px solid var(--line); }
+  .row-title { font-weight: 600; font-size: 1.05rem; display: block; }
+  .row-title.big-title { font-size: 1.15rem; }
+  .row-meta { font-size: .77rem; display: block; margin-top: .15rem; }
+  .row-sum { font-size: .92rem; margin: .4rem 0 0; }
+  .row-links { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; margin: .5rem 0 0; font-size: .78rem; }
+  .xlink { border: none; color: var(--muted); }
+  .xlink:hover { color: var(--accent); }
+
+  /* Press — talks & interviews (prominent titles) */
+  .entries { list-style: none; padding: 0; margin: 0; }
+  .entry { padding: .9rem 0; border-bottom: 1px solid var(--line); }
+  .entry-title { font-size: 1.12rem; font-weight: 600; border: none; display: inline-block; }
+  .entry-title:hover { color: var(--accent); }
+  .entry-meta { display: block; font-size: .77rem; margin-top: .2rem; }
+
+  /* Press — media coverage (uniform date-led reference rows) */
+  .refs { list-style: none; padding: 0; margin: 0; }
+  .ref { display: grid; grid-template-columns: 7rem 1fr; gap: .2rem 1rem; padding: .6rem 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .ref-date { font-size: .76rem; }
+  .ref-outlet { font-weight: 600; border: none; }
+  .ref-outlet:hover { color: var(--accent); }
+  .ref-title { font-size: .92rem; }
+  @media (max-width: 520px) {
+    .ref { grid-template-columns: 1fr; gap: .1rem; }
+    .ref-date { order: 2; }
+  }
+
+  /* About */
+  .bio { font-size: 1.1rem; line-height: 1.6; max-width: 64ch; margin-bottom: 2.2rem; }
+  .contact-line { font-size: .95rem; line-height: 2; }
+  .contact-line a { color: var(--fg); border-bottom: 1px solid var(--line); }
+  .contact-line a:hover { color: var(--accent); border-color: var(--accent); }
 </style>

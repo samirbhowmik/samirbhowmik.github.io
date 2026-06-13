@@ -1,0 +1,79 @@
+---
+/**
+ * Gallery — the media slot that sits directly under a work's title.
+ * Shows the images as a carousel with arrows to move back and forth.
+ * A single image just shows on its own (no arrows). Images lazy-load.
+ */
+interface Img { src: string; alt?: string; caption?: string; }
+interface Props { images: Img[]; }
+const { images } = Astro.props;
+const hasCaptions = images.some(im => im.caption);
+---
+{images.length > 0 && (
+  <figure class="gallery" data-gallery data-captions={JSON.stringify(images.map(im => im.caption || ''))}>
+    <div class="frame">
+      {images.map((im, i) => (
+        <div class="slide" data-slide style={i === 0 ? '' : 'display:none'} aria-hidden={i === 0 ? 'false' : 'true'}>
+          <img src={im.src} alt={im.alt || ''} loading="lazy" decoding="async" />
+        </div>
+      ))}
+    </div>
+
+    {images.length > 1 ? (
+      <div class="ctl mono">
+        <button type="button" class="g-btn" data-prev aria-label="Previous image">←</button>
+        <span class="count" data-count>1 / {images.length}</span>
+        <button type="button" class="g-btn" data-next aria-label="Next image">→</button>
+        {hasCaptions && <span class="cap muted" data-cap>{images[0].caption || ''}</span>}
+      </div>
+    ) : (
+      images[0].caption && <figcaption class="cap solo muted mono">{images[0].caption}</figcaption>
+    )}
+  </figure>
+)}
+
+<script>
+  // One handler for every gallery on the page; guarded so it runs once each.
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach(g => {
+    if (g.dataset.init) return;
+    g.dataset.init = '1';
+    const slides = [...g.querySelectorAll<HTMLElement>('[data-slide]')];
+    if (slides.length < 2) return;
+    const count = g.querySelector('[data-count]');
+    const cap = g.querySelector('[data-cap]');
+    let caps: string[] = [];
+    try { caps = JSON.parse(g.getAttribute('data-captions') || '[]'); } catch {}
+    let i = 0;
+    const show = (n: number) => {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, k) => {
+        s.style.display = k === i ? 'block' : 'none';
+        s.setAttribute('aria-hidden', k === i ? 'false' : 'true');
+      });
+      if (count) count.textContent = `${i + 1} / ${slides.length}`;
+      if (cap) cap.textContent = caps[i] || '';
+    };
+    g.querySelector('[data-prev]')?.addEventListener('click', () => show(i - 1));
+    g.querySelector('[data-next]')?.addEventListener('click', () => show(i + 1));
+  });
+</script>
+
+<style>
+  .gallery { margin: 1rem 0 0; }
+  .frame { width: 100%; }
+  .slide img {
+    width: 100%; height: auto; display: block; border-radius: 5px;
+    background: rgba(255,255,255,.03);
+  }
+  .ctl { display: flex; align-items: center; gap: .9rem; margin-top: .6rem; flex-wrap: wrap; }
+  .g-btn {
+    background: none; border: 1px solid currentColor; color: inherit; opacity: .75;
+    width: 2.1rem; height: 2.1rem; border-radius: 999px; cursor: pointer;
+    font-size: 1rem; line-height: 1; display: grid; place-items: center;
+    transition: opacity .2s, border-color .2s, color .2s;
+  }
+  .g-btn:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+  .count { font-size: .72rem; opacity: .7; }
+  .cap { font-size: .74rem; }
+  .cap.solo { display: block; margin-top: .45rem; }
+</style>

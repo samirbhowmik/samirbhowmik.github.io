@@ -22,10 +22,23 @@ const projects = defineCollection({
     // Names exactly as you want them shown. Shared collaborators = edges.
     collaborators: z.array(z.string()).default([]),
     venue: z.string().optional(),
+    // Institutional / venue page link (Helsinki Biennial, Venice Biennale, etc.)
+    venueUrl: z.string().url().optional(),
     // Embeds, not hosted files. Paste the watch URL; the page builds the embed.
     video: z.string().url().optional(),
-    // Cover image path in /public, e.g. "/img/paperwork.jpg"
+    // Cover image path in /public, e.g. "/img/paperwork.jpg". Shown as the
+    // single image under the title when there's no gallery.
     cover: z.string().optional(),
+    // Gallery shown under the title as a carousel (arrows to move back/forth).
+    // Each item: a path in /public, optional alt text, optional caption.
+    // e.g. - src: "/img/lost-islands-1.jpg"
+    //        alt: "Installation view, Helsinki Biennial 2021"
+    //        caption: "Helsinki Biennial 2021"
+    gallery: z.array(z.object({
+      src: z.string(),
+      alt: z.string().optional(),
+      caption: z.string().optional(),
+    })).default([]),
     // Optional pointer to a related publication entry id (filename w/o .md)
     publication: z.string().optional(),
     // External links for the project (live demo/site and source code).
@@ -35,6 +48,8 @@ const projects = defineCollection({
     summary: z.string(),
     // Set true to surface on the landing strata / featured rail.
     featured: z.boolean().default(false),
+    // Mark as a research project: appears under Research (after essays), not Art.
+    research: z.boolean().default(false),
     // Lower numbers sort first within a year when you want manual control.
     order: z.number().default(0),
   }),
@@ -50,7 +65,7 @@ const publications = defineCollection({
   schema: z.object({
     title: z.string(),
     year: z.number(),
-    kind: z.enum(['book', 'chapter', 'article', 'talk', 'essay', 'other']),
+    kind: z.enum(['book', 'chapter', 'article', 'talk', 'essay', 'review', 'other']),
     venue: z.string().optional(), // journal, press, conference
     authors: z.array(z.string()).default(['Samir Bhowmik']),
     url: z.string().url().optional(),
@@ -84,6 +99,10 @@ const teaching = defineCollection({
     partners: z.array(z.string()).default([]),
     summary: z.string().optional(),
     order: z.number().default(0),
+    // Course/blog links: each { label, url }.
+    links: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
+    // Cross-links to editorial/publication ids (e.g. the books a seminar produced).
+    related: z.array(z.string()).default([]),
   }),
 });
 
@@ -94,9 +113,12 @@ const teaching = defineCollection({
 const press = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/press' }),
   schema: z.object({
-    outlet: z.string(),                 // New York Times, E-flux, Monocle...
-    title: z.string().optional(),       // headline, if a specific article
+    // 'media' coverage, 'interview', or 'talk' (lectures & talks)
+    category: z.enum(['media', 'interview', 'talk']).default('media'),
+    outlet: z.string(),                 // outlet, host, or venue
+    title: z.string().optional(),       // headline / description, if specific
     year: z.number().optional(),
+    date: z.string().optional(),        // human date, e.g. "29 Jan 2022"
     url: z.string().url().optional(),
     marquee: z.boolean().default(false),// show in the homepage strip
     order: z.number().default(0),
@@ -117,6 +139,9 @@ const service = defineCollection({
     url: z.string().url().optional(),
     summary: z.string().optional(),
     order: z.number().default(0),
+    // Cross-links: project ids and/or publication ids this role connects to.
+    relatedProjects: z.array(z.string()).default([]),
+    relatedPubs: z.array(z.string()).default([]),
   }),
 });
 
