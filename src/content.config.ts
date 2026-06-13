@@ -1,6 +1,10 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
+// The CMS writes empty strings ("") for blank optional fields, which a strict
+// .url() check rejects and which breaks the build. Treat "" / null as "not set".
+const urlOpt = z.preprocess((v) => (v === '' || v == null ? undefined : v), urlOpt);
+
 /**
  * PROJECTS — one Markdown file per work, in src/content/projects/.
  * The frontmatter fields here are the single source of truth.
@@ -23,9 +27,9 @@ const projects = defineCollection({
     collaborators: z.array(z.string()).default([]),
     venue: z.string().optional(),
     // Institutional / venue page link (Helsinki Biennial, Venice Biennale, etc.)
-    venueUrl: z.string().url().optional(),
+    venueUrl: urlOpt,
     // Embeds, not hosted files. Paste the watch URL; the page builds the embed.
-    video: z.string().url().optional(),
+    video: urlOpt,
     // Cover image path in /public, e.g. "/img/paperwork.jpg". Shown as the
     // single image under the title when there's no gallery.
     cover: z.string().optional(),
@@ -42,8 +46,8 @@ const projects = defineCollection({
     // Optional pointer to a related publication entry id (filename w/o .md)
     publication: z.string().optional(),
     // External links for the project (live demo/site and source code).
-    liveUrl: z.string().url().optional(),
-    repoUrl: z.string().url().optional(),
+    liveUrl: urlOpt,
+    repoUrl: urlOpt,
     // One-line summary used in cards and OG description.
     summary: z.string(),
     // Set true to surface on the landing strata / featured rail.
@@ -68,11 +72,11 @@ const publications = defineCollection({
     kind: z.enum(['book', 'chapter', 'article', 'talk', 'essay', 'review', 'other']),
     venue: z.string().optional(), // journal, press, conference
     authors: z.array(z.string()).default(['Samir Bhowmik']),
-    url: z.string().url().optional(),
+    url: urlOpt,
     doi: z.string().optional(),
     // Direct link to a downloadable PDF (e.g. a Zenodo record's file/landing
     // page). Shows a "PDF ↓" link on the Writing page.
-    pdf: z.string().url().optional(),
+    pdf: urlOpt,
     // Cover image path in /public, e.g. "/img/book-cover.jpg" — used to feature
     // the book on the homepage and publications page.
     cover: z.string().optional(),
@@ -100,7 +104,7 @@ const teaching = defineCollection({
     summary: z.string().optional(),
     order: z.number().default(0),
     // Course/blog links: each { label, url }.
-    links: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
+    links: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
     // Cross-links to editorial/publication ids (e.g. the books a seminar produced).
     related: z.array(z.string()).default([]),
   }),
@@ -119,7 +123,7 @@ const press = defineCollection({
     title: z.string().optional(),       // headline / description, if specific
     year: z.number().optional(),
     date: z.string().optional(),        // human date, e.g. "29 Jan 2022"
-    url: z.string().url().optional(),
+    url: urlOpt,
     marquee: z.boolean().default(false),// show in the homepage strip
     order: z.number().default(0),
   }),
@@ -136,7 +140,7 @@ const service = defineCollection({
     category: z.enum(['editorial', 'leadership', 'networks', 'engagement', 'supervision', 'other']),
     org: z.string().optional(),
     years: z.string().optional(),
-    url: z.string().url().optional(),
+    url: urlOpt,
     summary: z.string().optional(),
     order: z.number().default(0),
     // Cross-links: project ids and/or publication ids this role connects to.
