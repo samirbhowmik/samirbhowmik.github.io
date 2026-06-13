@@ -1,13 +1,24 @@
 ---
-title: "The Terra-Performing Book (working title)"
+title: 'Movement Changes Matter: The Choreography of Automation in the Age of Extractivism'
 year: 2026
 kind: book
 venue: Forthcoming
-authors: [Samir Bhowmik]
-themes: [extraction, ecology, performance, media-ecology]
-relatedProjects: [choreographies-of-discard, lost-islands, heat-work]
-forthcoming: true
+authors:
+  - Samir Bhowmik
+url: ''
+doi: ''
+pdf: ''
 cover: /img/book-cover.jpg
+themes:
+  - extraction
+  - ecology
+  - performance
+  - media-ecology
+relatedProjects:
+  - choreographies-of-discard
+  - lost-islands
+  - heat-work
+forthcoming: true
 summary: A forthcoming book developing the Terra-Performing framework — extractivism and ecology through intelligent performance research.
 ---
 
