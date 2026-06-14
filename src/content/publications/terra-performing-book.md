@@ -8,7 +8,7 @@ authors:
 url: ''
 doi: ''
 pdf: ''
-cover: https://picsum.photos/id/67/1280/1920.webp
+cover: /img/bookcover.png
 themes:
   - extraction
   - ecology
