@@ -1,4 +1,7 @@
 ---
+category: media
 outlet: Galerie
-marquee: false
+year: 2021
+date: "15 Jul 2021"
+url: "https://galeriemagazine.com/helsinki-biennial-2021/"
 ---

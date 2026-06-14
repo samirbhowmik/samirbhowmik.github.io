@@ -1,33 +1,82 @@
-# Decap CMS configuration — defines the editing forms.
-# After login, you'll see one section per content type, each with friendly fields.
+# ============================================================
+# Sveltia CMS — the editing forms for samirbhowmik.github.io
+# Free, open-source, writes Markdown straight to your GitHub repo.
+# After login you get one section per content type with friendly fields.
+# ============================================================
 
 backend:
   name: github
-  repo: samirbhowmik/portfolio   # your GitHub username/repo
+  repo: samirbhowmik/samirbhowmik.github.io   # GitHub username/repo
   branch: main
+  # The free login helper (Cloudflare Worker). Replace the URL below with your
+  # deployed worker once it's live (e.g. https://sveltia-cms-auth.<sub>.workers.dev)
+  base_url: https://sveltia-cms-auth.bhowmik-samir-r.workers.dev
 
-# Where uploaded images (book covers, project images) are stored.
+# Uploaded images go here in the repo; the path stored in content is /img/...
 media_folder: "public/img"
 public_folder: "/img"
 
-# Show a friendly site name in the editor
-site_url: https://samirbhowmik.cc
-display_url: https://samirbhowmik.cc
-logo_url: https://samirbhowmik.cc/img/og-default.png
+site_url: https://samirbhowmik.github.io
+display_url: https://samirbhowmik.github.io
+
+# Rich-text (Word-like) editor for all body fields.
+editor:
+  preview: true
 
 collections:
-  # ---------------- WORKS ----------------
+  # ---------------- SITE SETTINGS ----------------
+  - name: "settings"
+    label: "Site settings"
+    files:
+      - name: "site"
+        label: "Name, bio & links"
+        file: "src/data/site.json"
+        fields:
+          - { name: "name", label: "Name", widget: "string" }
+          - { name: "tagline", label: "Tagline", widget: "string", required: false }
+          - { name: "credentials", label: "Credentials line", widget: "string", required: false }
+          - { name: "location", label: "Location", widget: "string", required: false }
+          - { name: "bio", label: "Full bio (About + homepage 'read more')", widget: "text" }
+          - { name: "homeBioShort", label: "Short bio (homepage landing — shown before 'read more')", widget: "text", required: false }
+          - { name: "homeBio", label: "Short bio (unused — optional)", widget: "text", required: false }
+          - name: "now"
+            label: "Now banner (optional)"
+            widget: "object"
+            required: false
+            fields:
+              - { name: "label", label: "Label", widget: "string", required: false }
+              - { name: "text", label: "Text", widget: "string", required: false }
+              - { name: "url", label: "Link", widget: "string", required: false }
+              - { name: "date", label: "Date", widget: "string", required: false }
+          - name: "links"
+            label: "Links"
+            widget: "object"
+            fields:
+              - { name: "youtube", label: "YouTube", widget: "string", required: false }
+              - { name: "vimeo", label: "Vimeo", widget: "string", required: false }
+              - { name: "project", label: "Research project URL", widget: "string", required: false }
+          - name: "social"
+            label: "Social"
+            widget: "object"
+            fields:
+              - { name: "linkedin", label: "LinkedIn", widget: "string", required: false }
+              - { name: "instagram", label: "Instagram", widget: "string", required: false }
+              - { name: "scholar", label: "Google Scholar", widget: "string", required: false }
+              - { name: "orcid", label: "ORCID", widget: "string", required: false }
+
+  # ---------------- ART / RESEARCH PROJECTS ----------------
   - name: "projects"
-    label: "Works"
-    label_singular: "Work"
+    label: "Art & Research projects"
+    label_singular: "Project"
     folder: "src/content/projects"
     create: true
     slug: "{{slug}}"
     summary: "{{title}} ({{year}})"
-    sortable_fields: ['year', 'title']
+    sortable_fields: ["year", "title", "order"]
     fields:
       - { name: "title", label: "Title", widget: "string" }
       - { name: "year", label: "Year", widget: "number", value_type: "int", min: 1990, max: 2100 }
+      - { name: "research", label: "Research project? (shows under Research, not Art)", widget: "boolean", default: false }
       - { name: "summary", label: "One-line summary", widget: "text" }
       - name: "type"
         label: "Form / Type"
@@ -37,22 +86,29 @@ collections:
       - name: "themes"
         label: "Themes"
         widget: "list"
-        hint: "Keep these consistent — shared themes link related works (e.g. energy, infrastructure, ai, ecology, performance)"
-      - name: "collaborators"
-        label: "Collaborators"
+        hint: "Keep consistent — shared themes link related works (energy, infrastructure, ai, ecology, performance…)"
+      - { name: "collaborators", label: "Team / Collaborators", widget: "list", required: false, hint: "Names exactly as shown" }
+      - { name: "venue", label: "Venue", widget: "string", required: false }
+      - { name: "venueUrl", label: "Institutional / venue link", widget: "string", required: false }
+      - { name: "video", label: "Video URL (YouTube/Vimeo)", widget: "string", required: false }
+      - { name: "cover", label: "Cover image (if no gallery/video)", widget: "image", required: false, choose_url: false }
+      - name: "gallery"
+        label: "Gallery images (carousel under the title)"
         widget: "list"
         required: false
-        hint: "Names exactly as you want them shown"
-      - { name: "venue", label: "Venue", widget: "string", required: false }
-      - { name: "video", label: "Video URL (YouTube/Vimeo)", widget: "string", required: false, pattern: ['^https?://.+', 'Must be a full URL starting with http'] }
-      - { name: "cover", label: "Cover image", widget: "image", required: false, choose_url: false }
+        summary: "{{fields.caption}}"
+        fields:
+          - { name: "src", label: "Image", widget: "image", choose_url: false }
+          - { name: "alt", label: "Alt text", widget: "string", required: false }
+          - { name: "caption", label: "Caption", widget: "string", required: false }
       - { name: "liveUrl", label: "Live project URL", widget: "string", required: false }
       - { name: "repoUrl", label: "Source code URL", widget: "string", required: false }
-      - { name: "featured", label: "Featured on homepage?", widget: "boolean", default: false }
-      - { name: "order", label: "Manual sort order (optional)", widget: "number", value_type: "int", required: false, default: 0 }
-      - { name: "body", label: "Full description", widget: "markdown", required: false }
+      - { name: "publication", label: "Related publication id", widget: "string", required: false }
+      - { name: "featured", label: "📌 Feature on homepage (Latest work banner)", widget: "boolean", default: false, hint: "Tick to pin this art project to the homepage 'Latest work' card. If none ticked, the most recent shows." }
+      - { name: "order", label: "Sort order (lower = first)", widget: "number", value_type: "int", required: false, default: 0 }
+      - { name: "body", label: "Full description (Team credits, etc.)", widget: "markdown", required: false }
 
-  # ---------------- WRITING ----------------
+  # ---------------- WRITING / RESEARCH ----------------
   - name: "publications"
     label: "Writing"
     label_singular: "Publication"
@@ -60,14 +116,14 @@ collections:
     create: true
     slug: "{{slug}}"
     summary: "{{title}} ({{year}})"
-    sortable_fields: ['year', 'title']
+    sortable_fields: ["year", "title"]
     fields:
       - { name: "title", label: "Title", widget: "string" }
       - { name: "year", label: "Year", widget: "number", value_type: "int", min: 1990, max: 2100 }
       - name: "kind"
         label: "Kind"
         widget: "select"
-        options: ["book", "chapter", "article", "talk", "essay", "other"]
+        options: ["book", "chapter", "article", "essay", "review", "talk", "other"]
         default: "article"
       - { name: "venue", label: "Venue (journal, press, conference)", widget: "string", required: false }
       - { name: "authors", label: "Authors", widget: "list", default: ["Samir Bhowmik"] }
@@ -76,8 +132,9 @@ collections:
       - { name: "pdf", label: "PDF download URL", widget: "string", required: false }
       - { name: "cover", label: "Cover image (for books)", widget: "image", required: false, choose_url: false }
       - { name: "themes", label: "Themes", widget: "list", required: false }
-      - { name: "relatedProjects", label: "Related project IDs", widget: "list", required: false, hint: "filenames without .md, e.g. heat-work" }
+      - { name: "relatedProjects", label: "Related project ids", widget: "list", required: false, hint: "filenames without .md, e.g. heat-work" }
       - { name: "forthcoming", label: "Forthcoming / in review?", widget: "boolean", default: false }
+      - { name: "featured", label: "📌 Feature on homepage (New publication banner)", widget: "boolean", default: false, hint: "Tick to pin this to the homepage 'New publication' card. Books are excluded. If none ticked, the most recent shows." }
       - { name: "summary", label: "Summary", widget: "text", required: false }
       - { name: "body", label: "Notes", widget: "markdown", required: false }
 
@@ -89,6 +146,7 @@ collections:
     create: true
     slug: "{{slug}}"
     summary: "{{title}}"
+    sortable_fields: ["order", "title"]
     fields:
       - { name: "title", label: "Course title", widget: "string" }
       - { name: "institution", label: "Institution", widget: "string" }
@@ -98,82 +156,61 @@ collections:
       - { name: "role", label: "Your role", widget: "string", required: false }
       - { name: "partners", label: "Partner institutions", widget: "list", required: false }
       - { name: "summary", label: "Description", widget: "text", required: false }
+      - name: "links"
+        label: "Links (course page, blog, exhibition)"
+        widget: "list"
+        required: false
+        summary: "{{fields.label}}"
+        fields:
+          - { name: "label", label: "Label", widget: "string" }
+          - { name: "url", label: "URL", widget: "string" }
+      - { name: "related", label: "Related editorial/publication ids", widget: "list", required: false }
       - { name: "order", label: "Sort order", widget: "number", value_type: "int", required: false, default: 0 }
-      - { name: "body", label: "Body (optional)", widget: "markdown", required: false }
 
-  # ---------------- PRESS ----------------
+  # ---------------- PRESS, INTERVIEWS & TALKS ----------------
   - name: "press"
-    label: "Press"
-    label_singular: "Press item"
+    label: "Press, Interviews & Talks"
+    label_singular: "Item"
     folder: "src/content/press"
     create: true
     slug: "{{slug}}"
-    summary: "{{outlet}}"
+    summary: "{{outlet}} — {{title}}"
+    sortable_fields: ["year", "outlet"]
     fields:
-      - { name: "outlet", label: "Outlet", widget: "string" }
-      - { name: "title", label: "Headline (optional)", widget: "string", required: false }
+      - name: "category"
+        label: "Category"
+        widget: "select"
+        options: ["media", "interview", "talk"]
+        default: "media"
+      - { name: "outlet", label: "Outlet / host / venue", widget: "string" }
+      - { name: "title", label: "Headline / description", widget: "string", required: false }
       - { name: "year", label: "Year", widget: "number", value_type: "int", required: false }
+      - { name: "date", label: "Date (e.g. 29 Jan 2022)", widget: "string", required: false }
       - { name: "url", label: "Link", widget: "string", required: false }
-      - { name: "marquee", label: "Show in homepage 'As featured in' strip?", widget: "boolean", default: false }
+      - { name: "marquee", label: "📌 Show in homepage Press banner (media only)", widget: "boolean", default: false, hint: "For 'media' items: tick to list the outlet in the homepage Press banner." }
+      - { name: "featured", label: "📌 Feature in homepage Talk card (talk/interview only)", widget: "boolean", default: false, hint: "For 'talk' or 'interview' items: tick to pin it to the homepage Talk card. If none ticked, the most recent shows." }
       - { name: "order", label: "Sort order", widget: "number", value_type: "int", required: false, default: 0 }
-      - { name: "body", label: "Body (optional)", widget: "markdown", required: false }
 
-  # ---------------- SERVICE ----------------
+  # ---------------- SERVICE & NETWORKS ----------------
   - name: "service"
-    label: "Service"
-    label_singular: "Service item"
+    label: "Service & Networks"
+    label_singular: "Entry"
     folder: "src/content/service"
     create: true
     slug: "{{slug}}"
     summary: "{{title}}"
+    sortable_fields: ["order", "title"]
     fields:
       - { name: "title", label: "Title", widget: "string" }
       - name: "category"
         label: "Category"
         widget: "select"
         options: ["editorial", "leadership", "networks", "engagement", "supervision", "other"]
+        hint: "editorial → Research; leadership/networks/engagement → About"
       - { name: "org", label: "Organisation", widget: "string", required: false }
       - { name: "years", label: "Years", widget: "string", required: false }
-      - { name: "url", label: "Link", widget: "string", required: false }
-      - { name: "summary", label: "Description", widget: "text", required: false }
+      - { name: "url", label: "Link (PDF, page)", widget: "string", required: false }
+      - { name: "summary", label: "Summary", widget: "text", required: false }
+      - { name: "relatedProjects", label: "Related project ids", widget: "list", required: false }
+      - { name: "relatedPubs", label: "Related publication ids", widget: "list", required: false }
       - { name: "order", label: "Sort order", widget: "number", value_type: "int", required: false, default: 0 }
-      - { name: "body", label: "Body (optional)", widget: "markdown", required: false }
-
-  # ---------------- SITE SETTINGS ----------------
-  - name: "settings"
-    label: "Site settings"
-    files:
-      - name: "site"
-        label: "Profile, bio, links"
-        file: "src/data/site.json"
-        fields:
-          - { name: "name", label: "Name", widget: "string" }
-          - { name: "tagline", label: "Tagline", widget: "string" }
-          - { name: "credentials", label: "Credentials line", widget: "string" }
-          - { name: "location", label: "Location", widget: "string" }
-          - { name: "bio", label: "Full bio (About page)", widget: "text" }
-          - { name: "homeBio", label: "Short bio (homepage)", widget: "text" }
-          - name: "now"
-            label: "Now banner"
-            widget: "object"
-            fields:
-              - { name: "label", label: "Label", widget: "string", default: "Now" }
-              - { name: "text", label: "Text", widget: "string" }
-              - { name: "url", label: "Link", widget: "string", required: false }
-              - { name: "date", label: "Date", widget: "string", required: false }
-          - name: "links"
-            label: "Links"
-            widget: "object"
-            fields:
-              - { name: "youtube", label: "YouTube", widget: "string", required: false }
-              - { name: "vimeo", label: "Vimeo", widget: "string", required: false }
-              - { name: "project", label: "Project page", widget: "string", required: false }
-              - { name: "email", label: "Email", widget: "string" }
-          - name: "social"
-            label: "Social"
-            widget: "object"
-            fields:
-              - { name: "linkedin", label: "LinkedIn", widget: "string", required: false }
-              - { name: "instagram", label: "Instagram", widget: "string", required: false }
-              - { name: "scholar", label: "Google Scholar", widget: "string", required: false }
-              - { name: "orcid", label: "ORCID", widget: "string", required: false }

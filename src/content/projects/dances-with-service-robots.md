@@ -2,11 +2,25 @@
 title: Dances with Service Robots
 year: 2025
 type: [film, performance]
-themes: [robots, performance, ai, labour]
-collaborators: []
-summary: A forthcoming short film choreographing encounters between human performers and service robots.
+themes: [robots, performance, ai, labour, extraction]
+collaborators: [Geoffrey Erista, Christopher Thomas, Stefanía Ólafsdóttir, Mazdak Nassir]
+venue: Short film
+video: https://vimeo.com/803816852
+summary: A short film examining the entanglements of human–machine relations and resource extractivism through contemporary performance.
 featured: true
 ---
 
-Dances with Service Robots stages the awkward intimacy of human–machine
-choreography in spaces of service labour. Replace with your own text.
+*Dances with Service Robots* examines the entanglements of human–machine
+relations and resource extractivism through contemporary performance. The film
+presents vignettes of bodily interaction and conflict between human memory,
+desire, and the deployment of automation in storage and logistics.
+
+**Team**
+
+- Direction & Script — Samir Bhowmik
+- Assistant Director — Stefanía Ólafsdóttir
+- Production — Mazdak Nassir
+- Cinematography — Christopher Thomas
+- Performance — Geoffrey Erista
+- Sound Design — Totte Rautiainen
+- Location & Host — Sun Effects
