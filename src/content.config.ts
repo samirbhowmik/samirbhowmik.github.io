@@ -84,6 +84,9 @@ const publications = defineCollection({
     // ids of related projects (filenames without .md)
     relatedProjects: z.array(z.string()).default([]),
     forthcoming: z.boolean().default(false),
+    // Pin this publication to the homepage "New publication" banner.
+    // If none are pinned, the most recent non-book publication is used.
+    featured: z.boolean().default(false),
     summary: z.string().optional(),
   }),
 });
@@ -124,7 +127,10 @@ const press = defineCollection({
     year: z.number().optional(),
     date: z.string().optional(),        // human date, e.g. "29 Jan 2022"
     url: urlOpt,
-    marquee: z.boolean().default(false),// show in the homepage strip
+    marquee: z.boolean().default(false),// show in the homepage Press banner (media)
+    // Pin a talk/interview to the homepage "Talk" card. If none are pinned,
+    // the most recent talk/interview is used.
+    featured: z.boolean().default(false),
     order: z.number().default(0),
   }),
 });

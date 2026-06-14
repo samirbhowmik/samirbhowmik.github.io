@@ -34,6 +34,17 @@ const workEntries = await Promise.all(
 const artWorks = workEntries.filter((e) => !e.d.research);
 const researchWorks = workEntries.filter((e) => e.d.research).sort((a, b) => a.d.order - b.d.order);
 
+/* Kinethic is folded inside Terra-Performing as a nested sub-entry (no image). */
+const KINETHIC_ID = 'kinetic-tokenization';
+const TERRA_ID = 'terra-performing';
+const kinethicEntry = researchWorks.find((e) => e.p.id === KINETHIC_ID);
+const researchWorksTop = researchWorks.filter((e) => e.p.id !== KINETHIC_ID);
+const nestedFor = (id) => (id === TERRA_ID && kinethicEntry ? [kinethicEntry] : []);
+// Don't list Kinethic under Terra-Performing's "Related works" — it's nested in.
+researchWorksTop.forEach((e) => {
+  if (e.p.id === TERRA_ID) e.related = e.related.filter((r) => r.q.id !== KINETHIC_ID);
+});
+
 /* ---------- RESEARCH: publications + editorial ---------- */
 const pubsSorted = [...allPubs].sort(
   (a, b) => (Number(b.data.forthcoming) - Number(a.data.forthcoming)) || b.data.year - a.data.year
@@ -63,9 +74,15 @@ const mediaItems = byPress('media');
 const interviewItems = byPress('interview');
 const talkItems = byPress('talk');
 
-const talkCard = [...talkItems, ...interviewItems].map((t) => ({
-  text: t.data.title ? `${t.data.title} — ${t.data.outlet}` : t.data.outlet,
-}));
+/* Homepage Talk card: a single talk/interview. Pinned (featured) wins;
+   otherwise the most recent. */
+const talkPool = [...talkItems, ...interviewItems];
+const featuredTalkEntry = talkPool.find((t) => t.data.featured) ?? talkPool[0];
+const talkText = featuredTalkEntry
+  ? (featuredTalkEntry.data.title
+      ? `${featuredTalkEntry.data.title} — ${featuredTalkEntry.data.outlet}`
+      : featuredTalkEntry.data.outlet)
+  : null;
 
 /* ---------- CROSS-LINK TITLE LOOKUPS ---------- */
 const projTitle = Object.fromEntries(projects.map((p) => [p.id, p.data.title]));
@@ -81,8 +98,11 @@ const books = allPubs
   .filter((p) => p.data.kind === 'book')
   .sort((a, b) => (Number(b.data.forthcoming) - Number(a.data.forthcoming)) || b.data.year - a.data.year);
 const book = books[0];
-const latest = artWorks[0]?.p;
-const latestPub = pubsSorted.filter((p) => p.data.kind !== 'book')[0];
+// Latest work: pinned art project wins, else most recent.
+const latest = (artWorks.find((e) => e.d.featured) ?? artWorks[0])?.p;
+// New publication: pinned non-book publication wins, else most recent.
+const nonBookPubs = pubsSorted.filter((p) => p.data.kind !== 'book');
+const latestPub = nonBookPubs.find((p) => p.data.featured) ?? nonBookPubs[0];
 const featuredPress = mediaItems.filter((p) => p.data.marquee);
 
 const sections = [
@@ -115,7 +135,18 @@ const sections = [
       <div class="surface-header">
         <p class="depth mono">0 m · surface</p>
         <h1>{site.name}</h1>
-        <p class="homebio">{site.bio}</p>
+        {site.homeBioShort ? (
+          <div class="biofold" data-biofold>
+            <p class="homebio bio-short" data-bio-short>{site.homeBioShort}
+              <button type="button" class="bio-toggle mono" data-bio-more aria-expanded="false">Read more +</button>
+            </p>
+            <p class="homebio bio-full" data-bio-full hidden>{site.bio}
+              <button type="button" class="bio-toggle mono" data-bio-less aria-expanded="true">Read less −</button>
+            </p>
+          </div>
+        ) : (
+          <p class="homebio">{site.bio}</p>
+        )}
         {site.social && (
           <p class="socials mono">
             {site.social.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
@@ -137,10 +168,10 @@ const sections = [
 
       <div class="surface-cards">
         <div class="current">
-          {talkCard.length > 0 && (
-            <a class="now talk-card" href="#press">
+          {talkText && (
+            <a class="now talk-card" href={featuredTalkEntry?.data.url || '#press'}>
               <span class="now-label mono">Talk</span>
-              <span class="now-text" data-talk>{talkCard[0].text}</span>
+              <span class="now-text">{talkText}</span>
             </a>
           )}
           {latest && (
@@ -159,7 +190,7 @@ const sections = [
 
         {featuredPress.length > 0 && (
           <div class="featured-in">
-            <span class="fi-label mono">As featured in</span>
+            <span class="fi-label mono">Press</span>
             <span class="fi-outlets">
               {featuredPress.map((p, i) => (
                 <>
@@ -230,11 +261,11 @@ const sections = [
           </section>
         ))}
 
-        {researchWorks.length > 0 && (
+        {researchWorksTop.length > 0 && (
           <section class="subsec">
             <h3 class="kind">Research projects</h3>
             <div class="works">
-              {researchWorks.map((e) => <WorkCard entry={e} />)}
+              {researchWorksTop.map((e) => <WorkCard entry={e} nested={nestedFor(e.p.id)} />)}
             </div>
           </section>
         )}
@@ -299,17 +330,18 @@ const sections = [
         <h2 class="sec-title">Press, Interviews &amp; Talks</h2>
       </header>
       <div class="wrap narrow">
-        {talkItems.length > 0 && (
+        {mediaItems.length > 0 && (
           <section class="subsec">
-            <h3 class="kind">Lectures &amp; Talks</h3>
-            <ul class="entries">
-              {talkItems.map((p) => (
-                <li class="entry">
-                  <a class="entry-title" href={p.data.url || '#'}>{p.data.title || p.data.outlet}</a>
-                  <span class="entry-meta mono muted">{p.data.outlet}{(p.data.date || p.data.year) ? ` · ${p.data.date || p.data.year}` : ''}</span>
-                </li>
+            <h3 class="kind">Press</h3>
+            <p class="media-para">
+              {mediaItems.map((p, i) => (
+                <>
+                  {i > 0 && <span class="mp-sep"> · </span>}
+                  {p.data.url ? <a href={p.data.url}>{p.data.outlet}</a> : <span>{p.data.outlet}</span>}
+                  {(p.data.date || p.data.year) && <span class="muted"> ({p.data.date || p.data.year})</span>}
+                </>
               ))}
-            </ul>
+            </p>
           </section>
         )}
         {interviewItems.length > 0 && (
@@ -325,17 +357,14 @@ const sections = [
             </ul>
           </section>
         )}
-        {mediaItems.length > 0 && (
+        {talkItems.length > 0 && (
           <section class="subsec">
-            <h3 class="kind">Selected media coverage</h3>
-            <ul class="refs">
-              {mediaItems.map((p) => (
-                <li class="ref">
-                  <span class="ref-date mono muted">{p.data.date || p.data.year}</span>
-                  <span class="ref-main">
-                    {p.data.url ? <a class="ref-outlet" href={p.data.url}>{p.data.outlet}</a> : <span class="ref-outlet">{p.data.outlet}</span>}
-                    {p.data.title && <span class="ref-title muted"> — {p.data.title}</span>}
-                  </span>
+            <h3 class="kind">Lectures &amp; Talks</h3>
+            <ul class="entries">
+              {talkItems.map((p) => (
+                <li class="entry">
+                  <a class="entry-title" href={p.data.url || '#'}>{p.data.title || p.data.outlet}</a>
+                  <span class="entry-meta mono muted">{p.data.outlet}{(p.data.date || p.data.year) ? ` · ${p.data.date || p.data.year}` : ''}</span>
                 </li>
               ))}
             </ul>
@@ -402,12 +431,9 @@ const sections = [
         <section class="subsec">
           <h3 class="kind">Contact &amp; links</h3>
           <p class="contact-line mono">
-            <a href={`mailto:${site.links.email}`}>Email</a>
-            {site.social?.linkedin && <> · <a href={site.social.linkedin}>LinkedIn</a></>}
+            {site.social?.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
             {site.social?.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
             {site.social?.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
-            {site.social?.instagram && <> · <a href={site.social.instagram}>Instagram</a></>}
-            {site.links.project && <> · <a href={site.links.project}>Terra-Performing</a></>}
           </p>
         </section>
 
@@ -416,7 +442,6 @@ const sections = [
     </section>
   </div>
 
-  <script id="talks-data" type="application/json" set:html={JSON.stringify(talkCard)} is:inline></script>
 </Base>
 
 <script>
@@ -465,28 +490,19 @@ const sections = [
     })
   );
 
-  const talkEl = document.querySelector('[data-talk]');
-  const raw = document.getElementById('talks-data')?.textContent;
-  if (talkEl && raw) {
-    try {
-      const talks = JSON.parse(raw) as { text: string }[];
-      if (talks.length > 1) {
-        let idx = Math.floor(Math.random() * talks.length);
-        talkEl.textContent = talks[idx].text;
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        setInterval(() => {
-          let next = Math.floor(Math.random() * talks.length);
-          if (next === idx) next = (next + 1) % talks.length;
-          idx = next;
-          if (reduce) { talkEl.textContent = talks[idx].text; return; }
-          (talkEl as HTMLElement).style.transition = 'opacity .4s';
-          (talkEl as HTMLElement).style.opacity = '0';
-          setTimeout(() => { talkEl.textContent = talks[idx].text; (talkEl as HTMLElement).style.opacity = '1'; }, 400);
-        }, 5000);
-      } else if (talks.length === 1) {
-        talkEl.textContent = talks[0].text;
-      }
-    } catch {}
+  const fold = document.querySelector('[data-biofold]');
+  if (fold) {
+    const short = fold.querySelector('[data-bio-short]') as HTMLElement | null;
+    const full = fold.querySelector('[data-bio-full]') as HTMLElement | null;
+    const more = fold.querySelector('[data-bio-more]');
+    const less = fold.querySelector('[data-bio-less]');
+    const show = (expanded: boolean) => {
+      if (!short || !full) return;
+      short.hidden = expanded;
+      full.hidden = !expanded;
+    };
+    more?.addEventListener('click', () => show(true));
+    less?.addEventListener('click', () => show(false));
   }
 </script>
 
@@ -537,6 +553,14 @@ const sections = [
   .surface .depth { color: rgba(20,18,13,.5); }
   .surface h1 { font-size: clamp(2.3rem, 7vw, 4.4rem); margin: 0; line-height: 1; letter-spacing: -.02em; }
   .homebio { font-size: 1rem; line-height: 1.55; max-width: 50ch; margin: 1.3rem 0 0; color: #2a2722; }
+  .biofold .homebio { margin-top: 1.3rem; }
+  .biofold .bio-full { margin-top: 0; }
+  .bio-toggle {
+    background: none; border: none; cursor: pointer; padding: 0; margin-left: .35rem;
+    font-family: var(--font-mono); font-size: .8rem; color: #1a1712;
+    border-bottom: 1px solid var(--accent); white-space: nowrap; letter-spacing: .01em;
+  }
+  .bio-toggle:hover { color: var(--accent); }
   .socials { font-size: .85rem; margin: 1.2rem 0 0; color: rgba(20,18,13,.55); }
   .socials a { color: #1a1712; border-bottom: 1px solid transparent; }
   .socials a:hover { border-color: var(--accent); }
@@ -571,18 +595,19 @@ const sections = [
     .surface-cards  { grid-column: 1; grid-row: 2; }
     .book-feature   { grid-column: 2; grid-row: 1 / span 2; justify-self: end; align-self: center; }
   }
-  /* Mobile: shrink name + bio, push the book to the bottom of the first screen
-     so the cover is visible on landing without scrolling. */
+  /* Mobile: short bio (with read-more) frees vertical space so the book cover
+     can run full width — spanning the bio column — directly under the bio. */
   @media (max-width: 859px) {
-    .surface { min-height: 100svh; padding: 4.2rem 0 1.5rem; }
-    .surface-grid { min-height: calc(100svh - 5.7rem); gap: .9rem; }
-    .surface h1 { font-size: clamp(1.7rem, 8vw, 2.5rem); }
-    .homebio { font-size: .88rem; line-height: 1.45; margin-top: 1rem; }
-    .socials { margin-top: .7rem; font-size: .78rem; }
-    .book-feature { margin-top: auto; align-self: center; max-width: 220px; }
-    .book-feature img { max-height: 34svh; width: auto; }
+    .surface { min-height: 100svh; padding: 4.2rem 0 2rem; }
+    .surface-grid { gap: 1.4rem; }
+    .surface h1 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+    .homebio { font-size: .92rem; line-height: 1.5; margin-top: 1rem; }
+    .biofold .homebio { margin-top: 1rem; }
+    .socials { margin-top: .8rem; font-size: .8rem; }
+    .book-feature { margin: .4rem 0 0; width: 100%; max-width: 24rem; align-self: stretch; }
+    .book-feature img { width: 100%; height: auto; max-height: none; }
     .book-sum { display: none; }
-    .surface-cards { margin-top: 1.4rem; }
+    .surface-cards { margin-top: .6rem; }
   }
 
   /* ---------- Corpus ---------- */
@@ -633,6 +658,12 @@ const sections = [
   .entry-title { font-size: 1.12rem; font-weight: 600; border: none; display: inline-block; }
   .entry-title:hover { color: var(--accent); }
   .entry-meta { display: block; font-size: .77rem; margin-top: .2rem; }
+
+  /* Press — media coverage as a flowing paragraph: Outlet (date) · Outlet (date) */
+  .media-para { font-size: 1rem; line-height: 1.95; max-width: 64ch; margin: 0; }
+  .media-para a { border-bottom: 1px solid var(--line); }
+  .media-para a:hover { color: var(--accent); border-color: var(--accent); }
+  .media-para .mp-sep { color: var(--muted); }
 
   /* Press — media coverage (uniform date-led reference rows) */
   .refs { list-style: none; padding: 0; margin: 0; }

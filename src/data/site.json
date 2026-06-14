@@ -4,6 +4,7 @@
   "credentials": "Academy Research Fellow · Architect (AIA, NCARB, SAFA-Finland) · Doctor of Arts (Art & Design)",
   "location": "Helsinki",
   "bio": "Samir Bhowmik is a Helsinki-based multi-disciplinary artist, architect and scholar. He is an Academy of Finland Research Fellow at the University of the Arts Helsinki where he teaches and explores extractivism & ecology through film, installation and performance. His current research project ‘Terra-Performing (2022-27) examines extractivism and environmental change through intelligent performance research. Samir received a Doctor of Arts (2016) from Aalto University, Finland, and a Master of Architecture (2003) from the University of Maryland, United States. His collaborative artistic works and writings have appeared in Leonardo (MIT Press), Helsinki Biennial 2021, the Venice Architecture Biennale 2021 and internationally.",
+  "homeBioShort": "Samir Bhowmik is a Helsinki-based multidisciplinary artist, architect and scholar. He is an Academy of Finland Research Fellow at the University of the Arts Helsinki.",
   "homeBio": "I make performance, installation, and moving image about the infrastructures beneath everyday life — energy, waste, memory, machines. Currently an Academy of Finland Research Fellow at Uniarts Helsinki.",
   "now": {
     "label": "Now",
@@ -12,7 +13,6 @@
     "date": "2026-06-01"
   },
   "links": {
-    "email": "you@example.com",
     "youtube": "https://youtube.com/@your-handle",
     "vimeo": "https://vimeo.com/your-handle",
     "project": "https://www.uniarts.fi/en/projects/terra-performing/"

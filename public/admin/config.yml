@@ -36,7 +36,8 @@ collections:
           - { name: "tagline", label: "Tagline", widget: "string", required: false }
           - { name: "credentials", label: "Credentials line", widget: "string", required: false }
           - { name: "location", label: "Location", widget: "string", required: false }
-          - { name: "bio", label: "Full bio (homepage + About)", widget: "text" }
+          - { name: "bio", label: "Full bio (About + homepage 'read more')", widget: "text" }
+          - { name: "homeBioShort", label: "Short bio (homepage landing — shown before 'read more')", widget: "text", required: false }
           - { name: "homeBio", label: "Short bio (unused — optional)", widget: "text", required: false }
           - name: "now"
             label: "Now banner (optional)"
@@ -51,7 +52,6 @@ collections:
             label: "Links"
             widget: "object"
             fields:
-              - { name: "email", label: "Public email", widget: "string", required: false }
               - { name: "youtube", label: "YouTube", widget: "string", required: false }
               - { name: "vimeo", label: "Vimeo", widget: "string", required: false }
               - { name: "project", label: "Research project URL", widget: "string", required: false }
@@ -104,7 +104,7 @@ collections:
       - { name: "liveUrl", label: "Live project URL", widget: "string", required: false }
       - { name: "repoUrl", label: "Source code URL", widget: "string", required: false }
       - { name: "publication", label: "Related publication id", widget: "string", required: false }
-      - { name: "featured", label: "Featured?", widget: "boolean", default: false }
+      - { name: "featured", label: "📌 Feature on homepage (Latest work banner)", widget: "boolean", default: false, hint: "Tick to pin this art project to the homepage 'Latest work' card. If none ticked, the most recent shows." }
       - { name: "order", label: "Sort order (lower = first)", widget: "number", value_type: "int", required: false, default: 0 }
       - { name: "body", label: "Full description (Team credits, etc.)", widget: "markdown", required: false }
 
@@ -134,6 +134,7 @@ collections:
       - { name: "themes", label: "Themes", widget: "list", required: false }
       - { name: "relatedProjects", label: "Related project ids", widget: "list", required: false, hint: "filenames without .md, e.g. heat-work" }
       - { name: "forthcoming", label: "Forthcoming / in review?", widget: "boolean", default: false }
+      - { name: "featured", label: "📌 Feature on homepage (New publication banner)", widget: "boolean", default: false, hint: "Tick to pin this to the homepage 'New publication' card. Books are excluded. If none ticked, the most recent shows." }
       - { name: "summary", label: "Summary", widget: "text", required: false }
       - { name: "body", label: "Notes", widget: "markdown", required: false }
 
@@ -186,7 +187,8 @@ collections:
       - { name: "year", label: "Year", widget: "number", value_type: "int", required: false }
       - { name: "date", label: "Date (e.g. 29 Jan 2022)", widget: "string", required: false }
       - { name: "url", label: "Link", widget: "string", required: false }
-      - { name: "marquee", label: "Show in homepage 'As featured in' strip?", widget: "boolean", default: false }
+      - { name: "marquee", label: "📌 Show in homepage Press banner (media only)", widget: "boolean", default: false, hint: "For 'media' items: tick to list the outlet in the homepage Press banner." }
+      - { name: "featured", label: "📌 Feature in homepage Talk card (talk/interview only)", widget: "boolean", default: false, hint: "For 'talk' or 'interview' items: tick to pin it to the homepage Talk card. If none ticked, the most recent shows." }
       - { name: "order", label: "Sort order", widget: "number", value_type: "int", required: false, default: 0 }
 
   # ---------------- SERVICE & NETWORKS ----------------

@@ -59,11 +59,9 @@ const navLinks = [
         ))}
       </nav>
       <div class="menu-foot mono">
-        {site.links.youtube && <a href={site.links.youtube}>YouTube</a>}
-        {' · '}
-        {site.links.vimeo && <a href={site.links.vimeo}>Vimeo</a>}
-        {' · '}
-        <a href={`mailto:${site.links.email}`}>Email</a>
+        {site.social?.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
+        {site.social?.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
+        {site.social?.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
       </div>
     </div>
 

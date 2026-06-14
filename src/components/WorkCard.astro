@@ -7,7 +7,7 @@
 import Gallery from './Gallery.astro';
 import VideoEmbed from './VideoEmbed.astro';
 
-const { entry } = Astro.props;
+const { entry, nested = [] } = Astro.props;
 const { p, d, Content, relatedPubs, related } = entry;
 ---
 <article class="work" id={p.id}>
@@ -40,6 +40,27 @@ const { p, d, Content, relatedPubs, related } = entry;
     </summary>
     <div class="unfold-body">
       <div class="prose"><Content /></div>
+
+      {nested.length > 0 && (
+        <div class="nested">
+          <p class="rel-head mono">Within this project</p>
+          {nested.map((c) => (
+            <div class="subwork" id={c.p.id}>
+              <h4 class="subwork-title">{c.d.title} <span class="muted">({c.d.year})</span></h4>
+              {c.d.collaborators.length > 0 && (
+                <p class="subwork-meta mono muted">with {c.d.collaborators.join(', ')}</p>
+              )}
+              <p class="subwork-sum">{c.d.summary}</p>
+              {(c.d.liveUrl || c.d.repoUrl) && (
+                <p class="work-links mono">
+                  {c.d.liveUrl && <a class="plink" href={c.d.liveUrl}>↗ Live project</a>}
+                  {c.d.repoUrl && <a class="plink" href={c.d.repoUrl}>↗ Source code</a>}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {(d.liveUrl || d.repoUrl) && (
         <p class="work-links mono">
@@ -116,6 +137,12 @@ const { p, d, Content, relatedPubs, related } = entry;
   .plink { border: 1px solid var(--line); border-radius: 6px; padding: .5rem .9rem; font-size: .85rem; font-weight: 600; transition: border-color .2s, color .2s; }
   .plink:hover { border-color: var(--accent); color: var(--accent); }
   .themes { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.4rem 0 0; }
+  .nested { margin-top: 1.6rem; padding-left: 1rem; border-left: 2px solid rgba(216,166,87,.35); }
+  .nested .rel-head { margin-bottom: .7rem; }
+  .subwork { padding: .3rem 0 0; scroll-margin-top: 4.6rem; }
+  .subwork-title { font-size: 1.15rem; margin: 0; line-height: 1.2; }
+  .subwork-meta { font-size: .74rem; margin: .25rem 0 0; }
+  .subwork-sum { font-size: .98rem; line-height: 1.5; margin: .5rem 0 0; max-width: 60ch; }
   .related { margin-top: 1.4rem; }
   .rel-head { font-size: .68rem; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin: 0 0 .4rem; }
   .rel { list-style: none; padding: 0; margin: 0; }
