@@ -22,5 +22,11 @@
     "instagram": "https://www.instagram.com/_terraperforming/",
     "scholar": "https://scholar.google.com/citations?user=YOUR_ID",
     "orcid": "https://orcid.org/0000-0001-5830-614X"
+  },
+  "banners": {
+    "latestWork": "lost-islands",
+    "newPublication": "lost-islands-acoustic-space",
+    "talkCard": "talk-ihme-media-cultures",
+    "pressBanner": []
   }
 }
