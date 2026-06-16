@@ -87,6 +87,8 @@ const publications = defineCollection({
     // Pin this publication to the homepage "New publication" banner.
     // If none are pinned, the most recent non-book publication is used.
     featured: z.boolean().default(false),
+    // Manual sort within the Writing list (lower = first). Default 0 → by year.
+    order: z.number().default(0),
     summary: z.string().optional(),
   }),
 });

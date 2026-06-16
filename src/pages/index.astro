@@ -31,7 +31,10 @@ const workEntries = await Promise.all(
     return { p, d, Content, relatedPubs, related };
   })
 );
-const artWorks = workEntries.filter((e) => !e.d.research);
+// Art list honours manual Sort order (lower = first), then most-recent year.
+const artWorks = workEntries
+  .filter((e) => !e.d.research)
+  .sort((a, b) => a.d.order - b.d.order || b.d.year - a.d.year);
 const researchWorks = workEntries.filter((e) => e.d.research).sort((a, b) => a.d.order - b.d.order);
 
 /* Kinethic is folded inside Terra-Performing as a nested sub-entry (no image). */
@@ -46,8 +49,12 @@ researchWorksTop.forEach((e) => {
 });
 
 /* ---------- RESEARCH: publications + editorial ---------- */
+// Writing honours manual Sort order (lower = first), then forthcoming, then year.
 const pubsSorted = [...allPubs].sort(
-  (a, b) => (Number(b.data.forthcoming) - Number(a.data.forthcoming)) || b.data.year - a.data.year
+  (a, b) =>
+    a.data.order - b.data.order ||
+    (Number(b.data.forthcoming) - Number(a.data.forthcoming)) ||
+    b.data.year - a.data.year
 );
 const pubOrder = ['book', 'chapter', 'article', 'essay', 'review', 'other'];
 const pubLabels = { book: 'Book', chapter: 'Chapters', article: 'Articles', essay: 'Essays', review: 'Book reviews', other: 'Other' };
@@ -59,8 +66,6 @@ const svc = await getCollection('service');
 const byCat = (c) => svc.filter((s) => s.data.category === c).sort((a, b) => a.data.order - b.data.order);
 const editorialItems = byCat('editorial');
 const leadershipItems = byCat('leadership');
-const networkItems = byCat('networks');
-const engagementItems = byCat('engagement');
 
 /* ---------- TEACHING ---------- */
 const courses = (await getCollection('teaching')).sort((a, b) => a.data.order - b.data.order);
@@ -77,7 +82,10 @@ const talkItems = byPress('talk');
 /* Homepage Talk card: a single talk/interview. Pinned (featured) wins;
    otherwise the most recent. */
 const talkPool = [...talkItems, ...interviewItems];
-const featuredTalkEntry = talkPool.find((t) => t.data.featured) ?? talkPool[0];
+const featuredTalkEntry =
+  (site.banners?.talkCard && talkPool.find((t) => t.id === site.banners.talkCard)) ??
+  talkPool.find((t) => t.data.featured) ??
+  talkPool[0];
 const talkText = featuredTalkEntry
   ? (featuredTalkEntry.data.title
       ? `${featuredTalkEntry.data.title} — ${featuredTalkEntry.data.outlet}`
@@ -98,19 +106,37 @@ const books = allPubs
   .filter((p) => p.data.kind === 'book')
   .sort((a, b) => (Number(b.data.forthcoming) - Number(a.data.forthcoming)) || b.data.year - a.data.year);
 const book = books[0];
-// Latest work: pinned art project wins, else most recent.
-const latest = (artWorks.find((e) => e.d.featured) ?? artWorks[0])?.p;
-// New publication: pinned non-book publication wins, else most recent.
+
+/* ---------- HOMEPAGE BANNERS (chosen in CMS → Site settings → Homepage banners) ----------
+   For each card: an explicit pick in Site settings wins; otherwise the old
+   per-item checkbox; otherwise the most recent. */
+const banners = site.banners || {};
+// Latest work card.
+const latest = (
+  (banners.latestWork && artWorks.find((e) => e.p.id === banners.latestWork)) ??
+  artWorks.find((e) => e.d.featured) ??
+  artWorks[0]
+)?.p;
+// New publication card (books excluded).
 const nonBookPubs = pubsSorted.filter((p) => p.data.kind !== 'book');
-const latestPub = nonBookPubs.find((p) => p.data.featured) ?? nonBookPubs[0];
-const featuredPress = mediaItems.filter((p) => p.data.marquee);
+const latestPub =
+  (banners.newPublication && nonBookPubs.find((p) => p.id === banners.newPublication)) ??
+  nonBookPubs.find((p) => p.data.featured) ??
+  nonBookPubs[0];
+// Press banner outlets (media items).
+const pressPicks = (banners.pressBanner || [])
+  .map((id) => mediaItems.find((p) => p.id === id))
+  .filter(Boolean);
+const marqueePress = mediaItems.filter((p) => p.data.marquee);
+const featuredPress = pressPicks.length
+  ? pressPicks
+  : (marqueePress.length ? marqueePress : mediaItems.slice(0, 4));
 
 const sections = [
   { id: 'art', label: 'Art' },
   { id: 'research', label: 'Research' },
   { id: 'teaching', label: 'Teaching' },
   { id: 'press', label: 'Press' },
-  { id: 'about', label: 'About' },
 ];
 ---
 <Base>
@@ -270,6 +296,22 @@ const sections = [
           </section>
         )}
 
+        {leadershipItems.length > 0 && (
+          <section class="subsec">
+            <h3 class="kind">Research leadership</h3>
+            <ul class="rows">
+              {leadershipItems.map((s) => (
+                <li class="row" id={s.id}>
+                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
+                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
+                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
+                  {xlinks(s).length > 0 && <p class="row-links mono">{xlinks(s).map((x) => <a class="xlink" href={x.href}>→ {x.label}</a>)}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {editorialItems.length > 0 && (
           <section class="subsec">
             <h3 class="kind">Editorial</h3>
@@ -374,72 +416,6 @@ const sections = [
       </div>
     </section>
 
-    <!-- −5 · ABOUT / SUBSTRATE -->
-    <section id="about" class="sec">
-      <header class="sec-head wrap">
-        <p class="depth mono">−5 · substrate</p>
-        <h2 class="sec-title">About</h2>
-      </header>
-      <div class="wrap narrow">
-        <p class="bio">{site.bio}</p>
-
-        {leadershipItems.length > 0 && (
-          <section class="subsec">
-            <h3 class="kind">Research leadership</h3>
-            <ul class="rows">
-              {leadershipItems.map((s) => (
-                <li class="row" id={s.id}>
-                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
-                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
-                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
-                  {xlinks(s).length > 0 && <p class="row-links mono">{xlinks(s).map((x) => <a class="xlink" href={x.href}>→ {x.label}</a>)}</p>}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-        {networkItems.length > 0 && (
-          <section class="subsec">
-            <h3 class="kind">International networks</h3>
-            <ul class="rows">
-              {networkItems.map((s) => (
-                <li class="row" id={s.id}>
-                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
-                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
-                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
-                  {xlinks(s).length > 0 && <p class="row-links mono">{xlinks(s).map((x) => <a class="xlink" href={x.href}>→ {x.label}</a>)}</p>}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-        {engagementItems.length > 0 && (
-          <section class="subsec">
-            <h3 class="kind">Public engagement</h3>
-            <ul class="rows">
-              {engagementItems.map((s) => (
-                <li class="row" id={s.id}>
-                  <span class="row-title">{s.data.url ? <a href={s.data.url}>{s.data.title}</a> : s.data.title}</span>
-                  <span class="row-meta mono muted">{s.data.org}{s.data.org && s.data.years && ' · '}{s.data.years}</span>
-                  {s.data.summary && <p class="row-sum muted">{s.data.summary}</p>}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section class="subsec">
-          <h3 class="kind">Contact &amp; links</h3>
-          <p class="contact-line mono">
-            {site.social?.linkedin && <a href={site.social.linkedin}>LinkedIn</a>}
-            {site.social?.scholar && <> · <a href={site.social.scholar}>Google Scholar</a></>}
-            {site.social?.orcid && <> · <a href={site.social.orcid}>ORCID</a></>}
-          </p>
-        </section>
-
-        <p class="enter mono"><a href="#top">↑ Return to the surface</a></p>
-      </div>
-    </section>
   </div>
 
 </Base>

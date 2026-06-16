@@ -63,6 +63,17 @@ collections:
               - { name: "instagram", label: "Instagram", widget: "string", required: false }
               - { name: "scholar", label: "Google Scholar", widget: "string", required: false }
               - { name: "orcid", label: "ORCID", widget: "string", required: false }
+          - name: "banners"
+            label: "Homepage banners — choose what appears on the landing"
+            widget: "object"
+            required: false
+            collapsed: false
+            hint: "Pick exactly what shows in the four landing cards. Leave any blank to fall back to the most recent item."
+            fields:
+              - { name: "latestWork", label: "Latest work card", widget: "relation", required: false, collection: "projects", value_field: "{{slug}}", search_fields: ["title"], display_fields: ["title"], hint: "The art/research project to feature." }
+              - { name: "newPublication", label: "New publication card", widget: "relation", required: false, collection: "publications", value_field: "{{slug}}", search_fields: ["title"], display_fields: ["title"], hint: "The writing to feature (books are excluded automatically)." }
+              - { name: "talkCard", label: "Talk card", widget: "relation", required: false, collection: "press", value_field: "{{slug}}", search_fields: ["title", "outlet"], display_fields: ["outlet", "title"], hint: "A talk or interview." }
+              - { name: "pressBanner", label: "Press banner outlets", widget: "relation", required: false, multiple: true, collection: "press", value_field: "{{slug}}", search_fields: ["outlet", "title"], display_fields: ["outlet", "title"], hint: "Which press outlets show in the homepage Press strip (pick several)." }
 
   # ---------------- ART / RESEARCH PROJECTS ----------------
   - name: "projects"
@@ -104,8 +115,8 @@ collections:
       - { name: "liveUrl", label: "Live project URL", widget: "string", required: false }
       - { name: "repoUrl", label: "Source code URL", widget: "string", required: false }
       - { name: "publication", label: "Related publication id", widget: "string", required: false }
-      - { name: "featured", label: "📌 Feature on homepage (Latest work banner)", widget: "boolean", default: false, hint: "Tick to pin this art project to the homepage 'Latest work' card. If none ticked, the most recent shows." }
-      - { name: "order", label: "Sort order (lower = first)", widget: "number", value_type: "int", required: false, default: 0 }
+      - { name: "featured", label: "Feature on homepage (optional)", widget: "boolean", default: false, hint: "Optional fallback. The main control is Site settings → Homepage banners → Latest work card." }
+      - { name: "order", label: "Sort order (lower = first in Art list)", widget: "number", value_type: "int", required: false, default: 0 }
       - { name: "body", label: "Full description (Team credits, etc.)", widget: "markdown", required: false }
 
   # ---------------- WRITING / RESEARCH ----------------
@@ -116,7 +127,7 @@ collections:
     create: true
     slug: "{{slug}}"
     summary: "{{title}} ({{year}})"
-    sortable_fields: ["year", "title"]
+    sortable_fields: ["order", "year", "title"]
     fields:
       - { name: "title", label: "Title", widget: "string" }
       - { name: "year", label: "Year", widget: "number", value_type: "int", min: 1990, max: 2100 }
@@ -134,7 +145,8 @@ collections:
       - { name: "themes", label: "Themes", widget: "list", required: false }
       - { name: "relatedProjects", label: "Related project ids", widget: "list", required: false, hint: "filenames without .md, e.g. heat-work" }
       - { name: "forthcoming", label: "Forthcoming / in review?", widget: "boolean", default: false }
-      - { name: "featured", label: "📌 Feature on homepage (New publication banner)", widget: "boolean", default: false, hint: "Tick to pin this to the homepage 'New publication' card. Books are excluded. If none ticked, the most recent shows." }
+      - { name: "featured", label: "Feature on homepage (optional)", widget: "boolean", default: false, hint: "Optional fallback. The main control is Site settings → Homepage banners → New publication card." }
+      - { name: "order", label: "Sort order (lower = first in Writing list)", widget: "number", value_type: "int", required: false, default: 0 }
       - { name: "summary", label: "Summary", widget: "text", required: false }
       - { name: "body", label: "Notes", widget: "markdown", required: false }
 
@@ -187,8 +199,8 @@ collections:
       - { name: "year", label: "Year", widget: "number", value_type: "int", required: false }
       - { name: "date", label: "Date (e.g. 29 Jan 2022)", widget: "string", required: false }
       - { name: "url", label: "Link", widget: "string", required: false }
-      - { name: "marquee", label: "📌 Show in homepage Press banner (media only)", widget: "boolean", default: false, hint: "For 'media' items: tick to list the outlet in the homepage Press banner." }
-      - { name: "featured", label: "📌 Feature in homepage Talk card (talk/interview only)", widget: "boolean", default: false, hint: "For 'talk' or 'interview' items: tick to pin it to the homepage Talk card. If none ticked, the most recent shows." }
+      - { name: "marquee", label: "Show in homepage Press banner (optional)", widget: "boolean", default: false, hint: "Optional fallback. The main control is Site settings → Homepage banners → Press banner outlets." }
+      - { name: "featured", label: "Feature in homepage Talk card (optional)", widget: "boolean", default: false, hint: "Optional fallback. The main control is Site settings → Homepage banners → Talk card." }
       - { name: "order", label: "Sort order", widget: "number", value_type: "int", required: false, default: 0 }
 
   # ---------------- SERVICE & NETWORKS ----------------
