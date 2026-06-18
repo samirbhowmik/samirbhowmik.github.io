@@ -5,7 +5,7 @@ type: [film, performance]
 themes: [robots, performance, ai, labour, extraction]
 collaborators: [Geoffrey Erista, Christopher Thomas, Stefanía Ólafsdóttir, Mazdak Nassir]
 venue: Short film
-video: https://vimeo.com/803816852
+video: https://www.youtube.com/watch?v=-JhyTmNGQBI
 summary: A short film examining the entanglements of human–machine relations and resource extractivism through contemporary performance.
 featured: true
 ---

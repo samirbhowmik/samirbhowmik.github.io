@@ -6,7 +6,7 @@ themes: [infrastructure, media-ecology, ecology, ai]
 collaborators: [Oskar Koli, Viljami Lehtonen, Dallas Ulla]
 venue: Helsinki Biennial 2021
 venueUrl: https://visit.virtualartgallery.com/samir-bhowmik
-video: https://vimeo.com/999028075
+video: https://www.youtube.com/watch?v=W_IhimuP9c0
 summary: Part of the Lost Islands project at the Helsinki Biennial 2021 — a 3D-animated installation deploying machine learning on an archive of submarine cables and marine lifeforms.
 featured: false
 ---

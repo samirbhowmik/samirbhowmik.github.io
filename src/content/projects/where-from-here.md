@@ -6,7 +6,7 @@ themes: [memory, performance, media-ecology]
 collaborators: [Lenore Malen, Dallas Ulla, Christopher Thomas]
 venue: Together Alone 2020
 venueUrl: https://wherefromhere.film
-video: https://vimeo.com/438497013
+video: https://www.youtube.com/watch?v=_r0IfMHlItU
 summary: A short performance film with New York artist Lenore Malen on freedom, isolation, and virtuality in the time of quarantine — a remote correspondence between Hudson, New York and Helsinki.
 featured: false
 ---
