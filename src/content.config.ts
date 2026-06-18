@@ -4,6 +4,8 @@ import { glob } from 'astro/loaders';
 // The CMS writes empty strings ("") for blank optional fields, which a strict
 // .url() check rejects and which breaks the build. Treat "" / null as "not set".
 const urlOpt = z.preprocess((v) => (v === '' || v == null ? undefined : v), z.string().url().optional());
+// CMS writes null/"" for blank number fields; coerce those to undefined so .default() applies.
+const numDefault0 = z.preprocess((v) => (v === '' || v == null ? undefined : v), z.number().default(0));
 
 /**
  * PROJECTS — one Markdown file per work, in src/content/projects/.
@@ -55,7 +57,7 @@ const projects = defineCollection({
     // Mark as a research project: appears under Research (after essays), not Art.
     research: z.boolean().default(false),
     // Lower numbers sort first within a year when you want manual control.
-    order: z.number().default(0),
+    order: numDefault0,
   }),
 });
 
@@ -88,7 +90,7 @@ const publications = defineCollection({
     // If none are pinned, the most recent non-book publication is used.
     featured: z.boolean().default(false),
     // Manual sort within the Writing list (lower = first). Default 0 → by year.
-    order: z.number().default(0),
+    order: numDefault0,
     summary: z.string().optional(),
   }),
 });
@@ -107,7 +109,7 @@ const teaching = defineCollection({
     role: z.string().optional(),        // creator & lead instructor, co-creator
     partners: z.array(z.string()).default([]),
     summary: z.string().optional(),
-    order: z.number().default(0),
+    order: numDefault0,
     // Course/blog links: each { label, url }.
     links: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
     // Cross-links to editorial/publication ids (e.g. the books a seminar produced).
@@ -133,7 +135,7 @@ const press = defineCollection({
     // Pin a talk/interview to the homepage "Talk" card. If none are pinned,
     // the most recent talk/interview is used.
     featured: z.boolean().default(false),
-    order: z.number().default(0),
+    order: numDefault0,
   }),
 });
 
@@ -150,7 +152,7 @@ const service = defineCollection({
     years: z.string().optional(),
     url: urlOpt,
     summary: z.string().optional(),
-    order: z.number().default(0),
+    order: numDefault0,
     // Cross-links: project ids and/or publication ids this role connects to.
     relatedProjects: z.array(z.string()).default([]),
     relatedPubs: z.array(z.string()).default([]),

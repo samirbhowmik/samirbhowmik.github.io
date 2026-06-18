@@ -8,19 +8,19 @@
   "homeBio": "I make performance, installation, and moving image about the infrastructures beneath everyday life — energy, waste, memory, machines. Currently an Academy of Finland Research Fellow at Uniarts Helsinki.",
   "now": {
     "label": "Now",
-    "text": "Speaking at [Event Name], [City] — [Month Year]",
-    "url": "https://example.com/event",
-    "date": "2026-06-01"
+    "text": "",
+    "url": "",
+    "date": ""
   },
   "links": {
-    "youtube": "https://youtube.com/@your-handle",
-    "vimeo": "https://vimeo.com/your-handle",
+    "youtube": "",
+    "vimeo": "",
     "project": "https://www.uniarts.fi/en/projects/terra-performing/"
   },
   "social": {
     "linkedin": "https://www.linkedin.com/in/samirbhowmik",
     "instagram": "https://www.instagram.com/_terraperforming/",
-    "scholar": "https://scholar.google.com/citations?user=YOUR_ID",
+    "scholar": "https://scholar.google.com/citations?user=szy6Jz0AAAAJ&hl=en",
     "orcid": "https://orcid.org/0000-0001-5830-614X"
   },
   "banners": {

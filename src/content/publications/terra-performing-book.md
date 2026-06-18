@@ -19,7 +19,7 @@ relatedProjects:
   - lost-islands
   - heat-work
 forthcoming: true
-order: null
+order: 0
 summary: A forthcoming book developing the Terra-Performing framework — extractivism and ecology through intelligent performance research.
 ---
 

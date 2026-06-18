@@ -5,7 +5,6 @@ type: [software, research, performance]
 themes: [ai, extraction, performance, infrastructure, labour]
 collaborators: [Minh Anh Nguyen, Lydia Touliatou]
 venue: Terra-Performing research project
-liveUrl: https://kinethic.ai/tokenization/
 repoUrl: https://github.com/MiaN2710/Tokenization
 summary: A blockchain-based platform that tokenizes motion data with embedded consent, provenance, and royalty distribution — proposing ethical authorship for movement in the age of AI.
 featured: true
