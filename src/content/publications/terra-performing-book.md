@@ -8,7 +8,7 @@ authors:
 url: ''
 doi: ''
 pdf: ''
-cover: /img/bookcover.png
+cover: /img/ChatGPT Image Jun 18, 2026 at 02_01_28 PM.png
 themes:
   - extraction
   - ecology
@@ -19,6 +19,7 @@ relatedProjects:
   - lost-islands
   - heat-work
 forthcoming: true
+order: null
 summary: A forthcoming book developing the Terra-Performing framework — extractivism and ecology through intelligent performance research.
 ---
 
