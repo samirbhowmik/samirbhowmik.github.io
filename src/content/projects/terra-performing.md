@@ -1,8 +1,8 @@
 ---
-title: Terra-Performing — Unfolding Extractivism by Intelligent Performance Research
+title: Terra-Performing — Unfolding Extractivism by Intelligent Performance Research (2022-27)
 year: 2022
 research: true
-summary: The umbrella research project (2022–27) — a multidisciplinary inquiry into extractivism through intelligent performance, funded by the Academy of Finland.
+summary: The umbrella research project (2022–27) — a multidisciplinary inquiry into extractivism through intelligent performance, funded by the Research Council of Finland.
 type:
   - research
 themes:
