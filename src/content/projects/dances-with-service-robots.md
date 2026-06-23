@@ -1,16 +1,32 @@
 ---
 title: Dances with Service Robots
-year: 2025
-type: [film, performance]
-themes: [robots, performance, ai, labour, extraction]
-collaborators: [Geoffrey Erista, Christopher Thomas, Stefanía Ólafsdóttir, Mazdak Nassir]
-venue: Short film
-video: https://www.youtube.com/watch?v=-JhyTmNGQBI
+year: 2026
 summary: A short film examining the entanglements of human–machine relations and resource extractivism through contemporary performance.
+type:
+  - film
+  - performance
+themes:
+  - robots
+  - performance
+  - ai
+  - labour
+  - extraction
+collaborators:
+  - Geoffrey Erista
+  - Christopher Thomas
+  - Stefanía Ólafsdóttir
+  - Mazdak Nassir
+venue: Short film
+venueUrl: ''
+video: https://www.youtube.com/watch?v=-JhyTmNGQBI
+liveUrl: ''
+repoUrl: ''
+publication: ''
 featured: true
+order: null
 ---
 
-*Dances with Service Robots* examines the entanglements of human–machine
+_Dances with Service Robots_ examines the entanglements of human–machine
 relations and resource extractivism through contemporary performance. The film
 presents vignettes of bodily interaction and conflict between human memory,
 desire, and the deployment of automation in storage and logistics.
