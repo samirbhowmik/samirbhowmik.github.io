@@ -1,14 +1,30 @@
 ---
 title: Terra-Performing — Unfolding Extractivism by Intelligent Performance Research
 year: 2022
-type: [research]
-themes: [extraction, ecology, performance, ai, infrastructure, media-ecology]
-collaborators: [Lydia Touliatou, Minh Anh Nguyen, Jussi Parikka, Alison Powell, Nabil Ahmed]
+research: true
+summary: The umbrella research project (2022–27) — a multidisciplinary inquiry into extractivism through intelligent performance, funded by the Academy of Finland.
+type:
+  - research
+themes:
+  - extraction
+  - ecology
+  - performance
+  - ai
+  - infrastructure
+  - media-ecology
+collaborators:
+  - Lydia Touliatou
+  - Minh Anh Nguyen
+  - Jussi Parikka
+  - Alison Powell
+  - Nabil Ahmed
 venue: Academy of Fine Arts, Uniarts Helsinki
 venueUrl: https://www.uniarts.fi/en/projects/terra-performing/
-summary: The umbrella research project (2022–27) — a multidisciplinary inquiry into extractivism through intelligent performance, funded by the Academy of Finland.
+video: ''
+liveUrl: ''
+repoUrl: ''
+publication: ''
 featured: false
-research: true
 order: 0
 ---
 
@@ -22,8 +38,7 @@ framework that incorporates global performative traditions, energy, and
 environmental impact into artistic practice — spanning Critical AI, Environmental
 Media, and Performance Studies.
 
-The artworks **Heat Work**, **Choreographies of Discard**, and **Lost Islands**
-are produced within this project, alongside the **Kinethic** tokenization platform.
+The artworks **Heat Work**, **Choreographies of Discard** are produced within this project.
 
 - **Time** — 09/2022 – 08/2027
 - **Funder** — Academy Research Fellow Project, Academy of Finland
