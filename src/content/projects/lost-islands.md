@@ -1,14 +1,27 @@
 ---
-title: Lost Islands
+title: Lost Islands - Helsinki Biennial 2021
 year: 2021
-type: [performance, installation, film]
-themes: [ecology, infrastructure, memory, extraction, performance]
-collaborators: [Christopher L. Thomas, Viljami Lehtonen, Michelle Orenius, Oskar Koli, Jussi Parikka]
+summary: A performative expedition through the wilderness and ruins of Vallisaari, commissioned by the Helsinki Biennial 2021 — on colonial extraction, the labouring body, and automation.
+type:
+  - performance
+  - installation
+  - film
+themes:
+  - ecology
+  - infrastructure
+  - memory
+  - extraction
+  - performance
+collaborators:
+  - Christopher L. Thomas
+  - Viljami Lehtonen
+  - Michelle Orenius
+  - Oskar Koli
+  - Jussi Parikka
 venue: Helsinki Biennial 2021
 venueUrl: https://helsinkibiennaali.fi/en/artist/samir-bhowmik/
 video: https://www.youtube.com/watch?v=G3l7JZ4_V0w
 publication: lost-islands-acoustic-space
-summary: A performative expedition through the wilderness and ruins of Vallisaari, commissioned by the Helsinki Biennial 2021 — on colonial extraction, the labouring body, and automation.
 featured: true
 ---
 
